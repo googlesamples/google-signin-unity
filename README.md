@@ -20,12 +20,10 @@ or as part of Firebase configuration.
 In order to access ID tokens or server auth codes, you also need to configure
 a web client ID.
 
-## Building the Android AAR library
-To build the Android library needed by the Unity plugin, run
-`gradlew :native-googlesignin:assembleDebug` (or assembleRelease).
-
-Copy the aar file in native-googlesignin/build/outputs/aar to Assets/Plugins/Android.
-
+## Building the Plugin
+To build the plugin run `./gradlew build_all`. This builds the support aar
+library, and packages the plugin into a .unitypackage file.  It also packages the
+sample scene and script in a separate package.
 
 __TODO:__ How to use this plugin with Firebase Auth.
 

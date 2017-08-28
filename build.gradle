@@ -33,6 +33,214 @@ allprojects {
     }
 }
 
+project.ext {
+    // Determine the current OS.
+    os_name = System.getProperty("os.name").toLowerCase();
+    os_osx = os_name.contains("mac os x");
+    os_windows = os_name.contains("windows");
+    os_linux = os_name.contains("linux");
+
+    unity_exe = System.getProperty("UNITY_EXE")
+    if (unity_exe == null || unity_exe.isEmpty()) {
+        unity_exe = System.getenv("UNITY_EXE")
+    }
+    if (unity_exe == null || unity_exe.isEmpty()) {
+        if (os_osx) {
+            unity_exe = '/Applications/Unity/Unity.app/Contents/MacOS/Unity'
+        } else if (os_windows) {
+            unity_exe = 'c:\\program files\\unity\\editor\\unity.exe'
+        } else {
+            // Fallback to just unity, and expect it on the path.
+            unity_exe = 'unity'
+        }
+    }
+
+    git_exe = System.getProperty("GIT_EXE")
+    if (git_exe == null || git_exe.isEmpty()) {
+        git_exe = System.getenv("GIT_EXE")
+    }
+    if (git_exe == null || git_exe.isEmpty()) {
+        // Fallback to git and expect it to be on the path.
+        git_exe = 'git'
+    }
+
+    exportPath = file('GoogleSignIn-1.0.0.unitypackage').absolutePath
+    samplePath = file('GoogleSignIn-sample.unitypackage').absolutePath
+    pluginSrcPath = file('GoogleSignInPlugin').absolutePath
+    pluginProjectPath = file('build/GoogleSignInPlugin').absolutePath
+
+    resolverDir = new File('build/jarresolver').absolutePath
+    jarresolver_uri = System.getProperty("RESOLVER_PACKAGE_URI")
+    jarresolver_repos = [
+      'https://github.com/googlesamples/unity-jar-resolver.git'
+    ]
+    // Set the tag to a specific value if you want to build pinned to a
+    // specific version of the jar resolver (This is uncommon).
+    // null indicates HEAD.
+    jarresolver_tag = null;
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+task copy_unity_project() {
+    doFirst {
+        copy {
+            from pluginSrcPath
+            into pluginProjectPath
+        }
+    }
+}
+
+task copy_aar() {
+    dependsOn ':native-googlesignin:assembleDefault', copy_unity_project
+    doLast {
+        def destDir =  new File(pluginProjectPath + "/Assets/Plugins/Android")
+        if (!destDir.exists()) {
+            destDir.mkdirs()
+        }
+        def srcDir = file(project(':native-googlesignin').buildDir.absolutePath +
+                "/outputs/aar")
+        copy {
+            from srcDir.absolutePath
+            into destDir.absolutePath
+            include "native-googlesignin-release.aar"
+        }
+    }
+}
+
+
+task copy_jarresolver() {
+    description = "Clones the jar resolver project and copied into the build."
+    doFirst {
+        if (file(resolverDir).exists()) {
+            delete resolverDir
+        }
+    }
+
+    doLast {
+        // Copy the package if the direct path is given.
+        if (jarresolver_uri != null) {
+            mkdir("${resolverDir}")
+            def resolver = new File("${resolverDir}/resolver.unitypackage")
+            new URL("${jarresolver_uri}").withInputStream {
+                inputStream -> resolver.withOutputStream { it << inputStream }
+            }
+            return
+        }
+
+        // Else, check each one of the repo addresses and stop when successful.
+        for (repo in jarresolver_repos) {
+            def result = exec {
+                    executable "${git_exe}"
+                        args "clone", repo, "${resolverDir}"
+                        ignoreExitValue true
+                    }
+            if (result.exitValue == 0 && jarresolver_tag != null) {
+                result = exec {
+                    executable "${git_exe}"
+                        args "checkout", "-b", "buildver", "${jarresolver_tag}"
+                        workingDir "${resolverDir}"
+                }
+            }
+
+            if (result.exitValue == 0) {
+                println "Downloaded resolver from " + repo
+                return
+            }
+        }
+    }
+}
+
+task package_plugin () {
+    description = "Creates and exports the Plugin unity package"
+
+    doLast {
+        def tree = fileTree(resolverDir) {
+            include "*.unitypackage"
+        }
+        def jarresolver_package = tree.getSingleFile()
+        def argv = [
+                "-g.building",
+                // This prevents the VersionHandler to preserve the plugin layout
+                "-gvh_disable",
+                // NOTE: This doesn't target Android since we don't want to have
+                // dependencies on the Jar Resolver as they require the plugin to
+                // be enabled during the build process which would break the
+                // versioning process.  Compilation is verified when exporting
+                // the sample projects.
+                "-batchmode",
+                "-projectPath", pluginProjectPath,
+                "-logFile", "build/unity.log",
+                "-importPackage", jarresolver_package,
+                "-exportPackage",
+                    "Assets/GoogleSignIn",
+                    "Assets/Parse",
+                    "Assets/PlayServicesResolver",
+                    "Assets/Plugins",
+                "${exportPath}",
+                "-quit"
+        ]
+
+        ext.execResult = exec {
+            executable "${unity_exe}"
+                args argv
+                ignoreExitValue true
+        }
+        if (ext.execResult.exitValue != 0) {
+            println "***Error Running Unity:"
+            def src = file('build/unity.log').text
+            print src
+            throw new GradleException('error exporting plugin')
+        }
+    }
+}
+
+
+task package_sample () {
+    description = "Creates and exports the Google Sign-in Sample"
+
+    doLast {
+        def argv = [
+                "-g.building",
+                // NOTE: This doesn't target Android since we don't want to have
+                // dependencies on the Jar Resolver as they require the plugin to
+                // be enabled during the build process which would break the
+                // versioning process.  Compilation is verified when exporting
+                // the sample projects.
+                "-batchmode",
+                "-projectPath", pluginProjectPath,
+                "-logFile", "build/unity-sample.log",
+                "-exportPackage",
+                    "Assets/SignInSample",
+                "${samplePath}",
+                "-quit"
+        ]
+
+        ext.execResult = exec {
+            executable "${unity_exe}"
+                args argv
+                ignoreExitValue true
+        }
+        if (ext.execResult.exitValue != 0) {
+            println "***Error Running Unity:"
+            def src = file('build/unity-sample.log').text
+            print src
+            throw new GradleException('error exporting sample')
+        }
+    }
+}
+
+/*
+ * This is a top level task that build the Unity plugin.
+ * It does the following:
+ *  - copy the java/C++ library to the Plugins directory.
+ *  - Import the latest Play Services Resolver plugin
+ *  - Build the Google Sign-In plugin package (requires Unity).
+ *  - Build the Google Sign-In Sample package (requires Unity).
+ */
+task build_all() {
+        dependsOn copy_aar, copy_jarresolver, package_plugin, package_sample
+}
+

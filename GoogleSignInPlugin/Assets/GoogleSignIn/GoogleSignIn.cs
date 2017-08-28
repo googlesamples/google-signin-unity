@@ -13,11 +13,13 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 // </copyright>
+
 namespace Google {
   using System;
   using System.Runtime.Serialization;
   using System.Threading.Tasks;
   using Google.Impl;
+  using UnityEngine;
 
   /// <summary>
   /// Google sign in API.
@@ -89,8 +91,9 @@ namespace Google {
           theInstance = new GoogleSignIn(new GoogleSignInImpl(Configuration));
 #else
           theInstance = new GoogleSignIn(null);
-          throw new SignInException(StatusCode.DeveloperError,
-                            "This platform is not supported by GoogleSignIn");
+          throw new SignInException(
+              GoogleSignInStatusCode.DeveloperError,
+              "This platform is not supported by GoogleSignIn");
 #endif
         }
         return theInstance;

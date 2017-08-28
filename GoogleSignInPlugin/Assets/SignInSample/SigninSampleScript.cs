@@ -27,11 +27,16 @@ namespace SignInSample {
 
     public string webClientId = "<your client id here>";
 
-    private static readonly GoogleSignInConfiguration configuration =
-                          new GoogleSignInConfiguration {
-                            WebClientId = webClientId,
-                            RequestIdToken = true
-                          };
+    private GoogleSignInConfiguration configuration;
+
+    // Defer the configuration creation until Awake so the web Client ID
+    // Can be set via the property inspector in the Editor.
+    void Awake() {
+      configuration = new GoogleSignInConfiguration {
+            WebClientId = webClientId,
+            RequestIdToken = true
+      };
+    }
 
     public void OnSignIn() {
       GoogleSignIn.Configuration = configuration;

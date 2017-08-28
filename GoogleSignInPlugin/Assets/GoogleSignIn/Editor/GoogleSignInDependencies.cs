@@ -83,6 +83,8 @@ namespace GoogleSignIn.Editor {
           { "bitcodeEnabled", false },
           });
     }
+#else
+    static void AddDependencies() { }
 #endif  // UNITY_ANDROID / iOS
   }
 }
