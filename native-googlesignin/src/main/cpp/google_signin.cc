@@ -22,6 +22,12 @@
 #define HELPER_CLASSNAME "com/google/googlesignin/GoogleSignInHelper"
 
 /*
+public static void enableDebugLogging(boolean flag)
+ */
+#define ENABLE_DEBUG_METHOD_NAME "enableDebugLogging"
+#define ENABLE_DEBUG_METHOD_SIG "(Z)V"
+
+/*
 public static void configure(Activity parentActivity,
                              boolean useGamesConfig,
                              String webClientId,
@@ -99,6 +105,8 @@ class GoogleSignIn::GoogleSignInImpl {
 
   void Configure(const Configuration &configuration);
 
+  void EnableDebugLogging(bool flag);
+
   // Starts the authentication process.
   Future<SignInResult> &SignIn();
 
@@ -122,6 +130,7 @@ class GoogleSignIn::GoogleSignInImpl {
   static const JNINativeMethod methods[];
 
   static jclass helper_clazz_;
+  static jmethodID enable_debug_method_;
   static jmethodID config_method_;
   static jmethodID disconnect_method_;
   static jmethodID signin_method_;
@@ -137,6 +146,7 @@ const JNINativeMethod GoogleSignIn::GoogleSignInImpl::methods[] = {
 };
 
 jclass GoogleSignIn::GoogleSignInImpl::helper_clazz_ = 0;
+jmethodID GoogleSignIn::GoogleSignInImpl::enable_debug_method_ = 0;
 jmethodID GoogleSignIn::GoogleSignInImpl::config_method_ = 0;
 jmethodID GoogleSignIn::GoogleSignInImpl::disconnect_method_ = 0;
 jmethodID GoogleSignIn::GoogleSignInImpl::signin_method_ = 0;
@@ -180,6 +190,8 @@ GoogleSignIn::GoogleSignInImpl::GoogleSignInImpl(jobject activity)
       helper_clazz_ = (jclass)env->NewGlobalRef(helper_clazz_);
       env->RegisterNatives(helper_clazz_, methods,
                            sizeof(methods) / sizeof(methods[0]));
+      enable_debug_method_ = env->GetStaticMethodID(helper_clazz_, ENABLE_DEBUG_METHOD_NAME,
+                                              ENABLE_DEBUG_METHOD_SIG);
       config_method_ = env->GetStaticMethodID(helper_clazz_, CONFIG_METHOD_NAME,
                                               CONFIG_METHOD_SIG);
       disconnect_method_ = env->GetStaticMethodID(
@@ -201,6 +213,13 @@ GoogleSignIn::GoogleSignInImpl::~GoogleSignInImpl() {
   activity_ = nullptr;
   delete current_result_;
   current_result_ = nullptr;
+}
+
+void GoogleSignIn::GoogleSignInImpl::EnableDebugLogging(bool flag) {
+  JNIEnv *env = GetJniEnv();
+
+  env->CallStaticVoidMethod(helper_clazz_, enable_debug_method_, flag);
+
 }
 
 void GoogleSignIn::GoogleSignInImpl::Configure(
@@ -349,6 +368,10 @@ void GoogleSignIn::GoogleSignInImpl::NativeOnAuthResult(
 // Google Sign-in API.
 GoogleSignIn::GoogleSignIn(jobject activity)
     : impl_(new GoogleSignInImpl(activity)) {}
+
+void GoogleSignIn::EnableDebugLogging(bool flag) {
+  impl_->EnableDebugLogging(flag);
+}
 
 void GoogleSignIn::Configure(const Configuration &configuration) {
   impl_->Configure(configuration);

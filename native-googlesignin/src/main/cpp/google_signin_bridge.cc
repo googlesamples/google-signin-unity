@@ -93,6 +93,10 @@ GoogleSignIn_t GoogleSignIn_Create(jobject activity) {
 
 void GoogleSignIn_Dispose(GoogleSignIn_t self) { delete self; }
 
+void GoogleSignIn_EnableDebugLogging(GoogleSignIn_t self, bool flag) {
+  self->wrapped_->EnableDebugLogging(flag);
+}
+
 void GoogleSignIn_Configure(GoogleSignIn_t self, bool useGameSignIn,
                             const char *webClientId, bool requestAuthCode,
                             bool forceTokenRefresh, bool requestEmail,

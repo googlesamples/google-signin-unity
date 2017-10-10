@@ -135,6 +135,9 @@ class GoogleSignIn {
   // add a fragment to the activity which performs the sign-in operation.
   GoogleSignIn(jobject activity);
 
+  // Enables verbose logging.
+  void EnableDebugLogging(bool flag);
+
   // Sets the configuration for the sign-in.  This must be called before
   // calling SignIn().  Calling this invalidates the current sign-in result.
   void Configure(const Configuration &configuration);

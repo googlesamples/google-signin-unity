@@ -168,10 +168,12 @@ public class GoogleSignInFragment extends Fragment implements
   }
 
   public synchronized boolean submitRequest(TokenRequest request) {
-    if (this.request == null) {
+    if (this.request == null || this.state == State.READY) {
       this.request = request;
       return true;
     }
+    GoogleSignInHelper.logError(String.format(Locale.getDefault(),
+            "Existing request: %s ignoring %s.  State = %s", this.request, request, this.state));
     return false;
   }
 
@@ -252,68 +254,74 @@ public class GoogleSignInFragment extends Fragment implements
    * connected.
    */
   private void processRequest(final boolean silent) {
-    if (request != null) {
-      setState(State.BUSY);
-    } else {
-      GoogleSignInHelper.logInfo("No pending configuration, returning");
-      return;
-    }
-
-    request
-        .getPendingResponse()
-        .setResultCallback(
-            new ResultCallback<TokenResult>() {
-              @Override
-              public void onResult(@NonNull TokenResult tokenResult) {
-                GoogleSignInHelper.logDebug(
-                    String.format(
-                        Locale.getDefault(),
-                        "Calling nativeOnResult: handle: %s, status: %d acct: %s",
-                        tokenResult.getHandle(),
-                        tokenResult.getStatus().getStatusCode(),
-                        tokenResult.getAccount()));
-                GoogleSignInHelper.nativeOnResult(
-                    tokenResult.getHandle(),
-                    tokenResult.getStatus().getStatusCode(),
-                    tokenResult.getAccount());
-                clearRequest(false);
-              }
-            });
-
-    // Build the GoogleAPIClient
-    buildClient(request);
-
-    GoogleSignInHelper.logDebug(
-        " Has connected == " + mGoogleApiClient.hasConnectedApi(Auth.GOOGLE_SIGN_IN_API));
-    if (!mGoogleApiClient.hasConnectedApi(Auth.GOOGLE_SIGN_IN_API)) {
-
-      if (!silent) {
-        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-        startActivityForResult(signInIntent, RC_SIGNIN);
+    try {
+      if (request != null) {
+        setState(State.BUSY);
       } else {
-        Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient)
-            .setResultCallback(
-                new ResultCallback<GoogleSignInResult>() {
-                  @Override
-                  public void onResult(@NonNull GoogleSignInResult googleSignInResult) {
-                    if (googleSignInResult.isSuccess()) {
-                      GoogleSignInHelper.nativeOnResult(
-                          request.getHandle(),
-                          googleSignInResult.getStatus().getStatusCode(),
-                          googleSignInResult.getSignInAccount());
-                      setState(State.READY);
-                    } else {
-                      GoogleSignInHelper.logError(
-                          "Error with " + "silentSignIn: " + googleSignInResult.getStatus());
-                      GoogleSignInHelper.nativeOnResult(
-                          request.getHandle(),
-                          googleSignInResult.getStatus().getStatusCode(),
-                          googleSignInResult.getSignInAccount());
-                      setState(State.READY);
-                    }
-                  }
-                });
+        GoogleSignInHelper.logInfo("No pending configuration, returning");
+        return;
       }
+
+      request
+              .getPendingResponse()
+              .setResultCallback(
+                      new ResultCallback<TokenResult>() {
+                        @Override
+                        public void onResult(@NonNull TokenResult tokenResult) {
+                          GoogleSignInHelper.logDebug(
+                                  String.format(
+                                          Locale.getDefault(),
+                                          "Calling nativeOnResult: handle: %s, status: %d acct: %s",
+                                          tokenResult.getHandle(),
+                                          tokenResult.getStatus().getStatusCode(),
+                                          tokenResult.getAccount()));
+                          GoogleSignInHelper.nativeOnResult(
+                                  tokenResult.getHandle(),
+                                  tokenResult.getStatus().getStatusCode(),
+                                  tokenResult.getAccount());
+                          clearRequest(false);
+                        }
+                      });
+
+      // Build the GoogleAPIClient
+      buildClient(request);
+
+      GoogleSignInHelper.logDebug(
+              " Has connected == " + mGoogleApiClient.hasConnectedApi(Auth.GOOGLE_SIGN_IN_API));
+      if (!mGoogleApiClient.hasConnectedApi(Auth.GOOGLE_SIGN_IN_API)) {
+
+        if (!silent) {
+          Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+          startActivityForResult(signInIntent, RC_SIGNIN);
+        } else {
+          Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient)
+                  .setResultCallback(
+                          new ResultCallback<GoogleSignInResult>() {
+                            @Override
+                            public void onResult(@NonNull GoogleSignInResult googleSignInResult) {
+                              if (googleSignInResult.isSuccess()) {
+                                GoogleSignInHelper.nativeOnResult(
+                                        request.getHandle(),
+                                        googleSignInResult.getStatus().getStatusCode(),
+                                        googleSignInResult.getSignInAccount());
+                                setState(State.READY);
+                              } else {
+                                GoogleSignInHelper.logError(
+                                        "Error with " + "silentSignIn: " + googleSignInResult.getStatus());
+                                GoogleSignInHelper.nativeOnResult(
+                                        request.getHandle(),
+                                        googleSignInResult.getStatus().getStatusCode(),
+                                        googleSignInResult.getSignInAccount());
+                                setState(State.READY);
+                              }
+                            }
+                          });
+        }
+      }
+    } catch (Throwable throwable) {
+      GoogleSignInHelper.logError("Exception caught! " + throwable.getMessage());
+      request.setResult(CommonStatusCodes.INTERNAL_ERROR, null);
+      return;
     }
 
     GoogleSignInHelper.logDebug("Done with processRequest!");
@@ -489,10 +497,13 @@ public class GoogleSignInFragment extends Fragment implements
     }
     super.onResume();
     if (getState() == State.PENDING) {
+      GoogleSignInHelper.logDebug("State is pending, calling processRequest(false)");
       processRequest(false);
     } else if (getState() == State.PENDING_SILENT) {
+      GoogleSignInHelper.logDebug("State is pending_silent, calling processRequest(true)");
       processRequest(true);
     } else {
+      GoogleSignInHelper.logDebug("State is now ready");
       setState(State.READY);
     }
   }

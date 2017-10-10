@@ -199,6 +199,10 @@ void* GoogleSignIn_Create(void* data) {
   return NULL;
 }
 
+void GoogleSignIn_EnableDebugLogging(void* unused, bool flag) {
+  if (flag) NSLog(@"GoogleSignIn: No optional logging available on iOS");
+}
+
 /**
  * Configures the GIDSignIn instance.  The first parameter is unused in iOS.
  * It is here to make the API between Android and iOS uniform.
@@ -265,7 +269,7 @@ void *GoogleSignIn_SignIn() {
 /**
  * Attempt a silent sign-in. Return value is the pointer to the currentResult object.
  */
-void *GoogleSignInSilently() {
+void *GoogleSignIn_SignInSilently() {
   bool busy = false;
   [resultLock lock];
   if (!currentResult_ || currentResult_->finished) {

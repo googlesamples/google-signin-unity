@@ -57,6 +57,9 @@ GoogleSignIn_t GoogleSignIn_Create(jobject activity);
 // Dispose the instance created by GoogleSignIn_Create().
 void GoogleSignIn_Dispose(GoogleSignIn_t self);
 
+// Enable verbose debugging
+void GoogleSignIn_EnableDebugLogging(GoogleSignIn_t self, bool flag);
+
 // Configure the sign-in process.  See GoogleSignIn::Configuration for details.
 void GoogleSignIn_Configure(GoogleSignIn_t self, bool useGameSignIn,
                             const char* webClientId, bool requestAuthCode,

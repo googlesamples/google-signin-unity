@@ -48,6 +48,11 @@ namespace Google.Impl {
       }
     }
 
+    /// <summary>Enables/Disables verbose logging to help troubleshooting</summary>
+    public void EnableDebugLogging(bool flag) {
+        GoogleSignIn_EnableDebugLogging(SelfPtr(), flag);
+    }
+
     /// <summary>
     /// Starts the authentication process.
     /// </summary>
@@ -99,6 +104,9 @@ namespace Google.Impl {
     /// <param name="data">Data used in creating the instance.</param>
     [DllImport(DllName)]
     static extern IntPtr GoogleSignIn_Create(IntPtr data);
+
+    [DllImport(DllName)]
+    static extern void GoogleSignIn_EnableDebugLogging(HandleRef self, bool flag);
 
     [DllImport(DllName)]
     static extern bool GoogleSignIn_Configure(HandleRef self,

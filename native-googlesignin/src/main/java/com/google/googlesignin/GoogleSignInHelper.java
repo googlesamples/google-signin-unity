@@ -31,6 +31,13 @@ public class GoogleSignInHelper {
   private static final String TAG = "SignInFragment";
 
   /**
+   * Enables verbose logging
+   */
+  public static void enableDebugLogging(boolean flag) {
+    loggingEnabled = flag;
+  }
+
+  /**
    * Sets the configuration of the sign-in api that should be used.
    *
    * @param parentActivity - the parent activity. This API creates a fragment that is attached to

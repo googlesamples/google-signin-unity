@@ -104,6 +104,10 @@ namespace Google {
       this.impl = impl;
     }
 
+    public void EnableDebugLogging(bool flag) {
+            impl.EnableDebugLogging(flag);
+    }
+
     /// <summary>Starts the authentication process.</summary>
     /// <remarks>
     /// The authenication process is started and may display account picker
@@ -190,6 +194,7 @@ namespace Google {
   internal interface ISignInImpl {
     Future<GoogleSignInUser> SignIn();
     Future<GoogleSignInUser> SignInSilently();
+    void EnableDebugLogging(bool flag);
     void SignOut();
     void Disconnect();
   }
