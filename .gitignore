@@ -1,0 +1,25 @@
+.gradle/
+.idea/
+bin/
+build/
+*.iml
+local.properties
+local.settings
+.externalNativeBuild/
+*.apk
+
+*.sln
+*.userprefs
+Library/
+ProjectSettings/
+Temp/
+obj/
+
+# Don't check in the resolver
+GoogleSignInPlugin/Assets/PlayServicesResolver/
+
+# don't checkin client plists
+GoogleSignInPlugin/Assets/Plugins/iOS/client*.plist*
+
+Assembly-CSharp-Editor.csproj
+Assembly-CSharp.csproj

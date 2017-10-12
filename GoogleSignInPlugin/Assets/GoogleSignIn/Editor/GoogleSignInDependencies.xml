@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<dependencies>
+  <!-- See https://github.com/googlesamples/unity-jar-resolver#usage for
+    how to configure dependencies -->
+  <androidPackages>
+    <!--- Auth  THIS IS ALWAYS REQUIRED -->
+    <!-- The dependency is actually on 10.2, but 10+ is close enough.
+         If you have problems, please change this to a concrete value.
+    -->
+    <androidPackage spec="com.google.android.gms:play-services-auth:10+">
+      <androidSdkPackageIds>
+        <androidSdkPackageId>extra-google-m2repository</androidSdkPackageId>
+      </androidSdkPackageIds>
+    </androidPackage>
+
+    <!-- IF YOU ARE USING THE GAMES_CONFIG TO SIGN-IN, YOU NEED TO
+           UNCOMMENT THIS DEPENDENCY!!
+
+            This is only used if you need to add play-services-games to your
+            project.
+    -->
+    <!--
+    <androidPackage spec="com.google.android.gms:play-services-games:10+">
+      <androidSdkPackageIds>
+        <androidSdkPackageId>extra-google-m2repository</androidSdkPackageId>
+      </androidSdkPackageIds>
+    </androidPackage>
+    -->
+
+  </androidPackages>
+
+  <!-- iOS Cocoapod dependencies can be specified by each iosPod element. -->
+  <iosPods>
+    <iosPod name="GoogleSignIn" version=">= 4.0.2" bitcodeEnabled="false"
+        minTargetSdk="6.0">
+    </iosPod>
+  </iosPods>
+</dependencies>
