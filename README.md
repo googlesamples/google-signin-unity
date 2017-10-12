@@ -4,6 +4,7 @@ _Copyright (c) 2017 Google Inc. All rights reserved._
 
 ## Overview
 
+Google Sign-In API plugin for Unity game engine.  Works with Android and iOS.
 This plugin exposes the Google Sign-In API within Unity.  This is specifically
 intended to be used by Unity projects that require OAuth ID tokens or server
 auth codes.
@@ -155,4 +156,3 @@ sample scene and script in a separate package.
 
 ## Questions? Problems?
 Post questions to this [Github project](https://github.com/googlesamples/google-signin-unity).
-
