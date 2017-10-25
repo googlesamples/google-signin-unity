@@ -15,6 +15,8 @@
 
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+import groovy.io.FileType
+
 buildscript {
     repositories {
         jcenter()
@@ -64,7 +66,13 @@ project.ext {
         git_exe = 'git'
     }
 
-    exportPath = file('GoogleSignIn-1.0.0.unitypackage').absolutePath
+    pluginVersion = "1.0.1"
+    currentPluginBasename = 'google-signin-plugin'
+    currentPluginName = (currentPluginBasename + '-' + pluginVersion +
+                                     '.unitypackage')
+    editorDir = "Assets/GoogleSignIn/Editor"
+    uploadDir = "${buildDir}/GoogleSignInPlugin/${editorDir}/m2repository"
+    exportPath = file(currentPluginName).absolutePath
     samplePath = file('GoogleSignIn-sample.unitypackage').absolutePath
     pluginSrcPath = file('GoogleSignInPlugin').absolutePath
     pluginProjectPath = file('build/GoogleSignInPlugin').absolutePath
@@ -85,6 +93,7 @@ task clean(type: Delete) {
 }
 
 task copy_unity_project() {
+    dependsOn ':native-googlesignin:uploadArchives'
     doFirst {
         copy {
             from pluginSrcPath
@@ -93,26 +102,8 @@ task copy_unity_project() {
     }
 }
 
-task copy_aar() {
-    dependsOn ':native-googlesignin:assembleDefault', copy_unity_project
-    doLast {
-        def destDir =  new File(pluginProjectPath + "/Assets/Plugins/Android")
-        if (!destDir.exists()) {
-            destDir.mkdirs()
-        }
-        def srcDir = file(project(':native-googlesignin').buildDir.absolutePath +
-                "/outputs/aar")
-        copy {
-            from srcDir.absolutePath
-            into destDir.absolutePath
-            include "native-googlesignin-release.aar"
-        }
-    }
-}
-
-
 task copy_jarresolver() {
-    description = "Clones the jar resolver project and copied into the build."
+    description = "Clones the jar resolver project."
     doFirst {
         if (file(resolverDir).exists()) {
             delete resolverDir
@@ -153,8 +144,9 @@ task copy_jarresolver() {
     }
 }
 
-task package_plugin () {
-    description = "Creates and exports the Plugin unity package"
+task import_jarresolver() {
+    description = "Imports the jar resolver into the project"
+    dependsOn copy_unity_project, copy_jarresolver
 
     doLast {
         def tree = fileTree(resolverDir) {
@@ -162,14 +154,80 @@ task package_plugin () {
         }
         def jarresolver_package = tree.getSingleFile()
         def argv = [
-                "-g.building",
-                // This prevents the VersionHandler to preserve the plugin layout
                 "-gvh_disable",
-                // NOTE: This doesn't target Android since we don't want to have
-                // dependencies on the Jar Resolver as they require the plugin to
-                // be enabled during the build process which would break the
-                // versioning process.  Compilation is verified when exporting
-                // the sample projects.
+                "-g.building",
+                "-buildTarget",
+                "android",
+                // This prevents the VersionHandler to preserve the plugin layout
+                "-batchmode",
+                "-projectPath", pluginProjectPath,
+                "-logFile", "build/import_jarresolver.log",
+                "-importPackage", jarresolver_package,
+                "-quit"
+        ]
+
+        ext.execResult = exec {
+            executable "${unity_exe}"
+                args argv
+                ignoreExitValue true
+        }
+        if (ext.execResult.exitValue != 0) {
+            println "***Error Running Unity:"
+            def src = file('build/import_jarresolver.log').text
+            print src
+            throw new GradleException('error importing jarresolver plugin')
+        }
+    }
+}
+
+task generate_manifest(dependsOn: [ 'inject_versionIntoMetaFiles']) {
+  description 'Generate a manifest for the files in the plug-in.'
+  doLast {
+    def dir = file("${pluginProjectPath}/Assets")
+    def list = []
+    dir.eachFileRecurse(groovy.io.FileType.FILES) { filename ->
+      def path = filename.path
+      if (!(path.toLowerCase().endsWith('.meta') ||
+            path.toLowerCase().endsWith('.txt'))) {
+        list << filename.path.replace("${pluginProjectPath}/", '')
+      }
+    }
+  def manifest = file("${pluginProjectPath}/${editorDir}/" +
+    versionedAssetName(currentPluginBasename + '.txt',
+    "${pluginVersion}"))
+    manifest.write(list.join('\n') + '\n')
+  }
+}
+
+task copy_manifestMetadata(dependsOn: generate_manifest, type: Copy) {
+  def manifestBasename = versionedAssetName(currentPluginBasename + '.txt',
+        null) + '.meta'
+  description 'Copy .meta file for the plugin manifest.'
+  from file("${pluginSrcPath}/${editorDir}/" + manifestBasename)
+  into file("${pluginProjectPath}/${editorDir}/")
+  rename {
+    String fn ->
+      return fn.replace(manifestBasename,
+          versionedAssetName(currentPluginBasename + '.txt',
+          "${pluginVersion}") + '.meta')
+  }
+}
+
+task package_plugin () {
+    description = "Creates and exports the Plugin unity package"
+    dependsOn generate_manifest, copy_manifestMetadata
+
+    doLast {
+        def tree = fileTree(resolverDir) {
+            include "*.unitypackage"
+        }
+        def jarresolver_package = tree.getSingleFile()
+        def argv = [
+                "-gvh_disable",
+                "-g.building",
+                "-buildTarget",
+                "android",
+                // This prevents the VersionHandler to preserve the plugin layout
                 "-batchmode",
                 "-projectPath", pluginProjectPath,
                 "-logFile", "build/unity.log",
@@ -203,6 +261,7 @@ task package_sample () {
 
     doLast {
         def argv = [
+                "-gvh_disable",
                 "-g.building",
                 // NOTE: This doesn't target Android since we don't want to have
                 // dependencies on the Jar Resolver as they require the plugin to
@@ -232,6 +291,44 @@ task package_sample () {
     }
 }
 
+task inject_versionIntoMetaFiles() {
+  description 'Inject the version number into the plugin\'s meta files.'
+  dependsOn copy_unity_project, import_jarresolver
+  doLast {
+    for (fileobj in fileTree("${pluginProjectPath}")) {
+      if (fileobj.path.endsWith('.meta')) {
+        def lines = fileobj.text.split('\n')
+        def outputLines = []
+        for (line in lines) {
+          outputLines.add(line)
+          if (line.contains('labels:')) {
+            outputLines.add("- gvh_v${pluginVersion}")
+          }
+        }
+        fileobj.write(outputLines.join('\n') + '\n')
+      }
+    }
+  }
+}
+
+// Construct the name of a versioned asset from the source filename and version
+// // string.
+// // The encoded string takes the form...
+// // ${filename}_v${version}_.${extension}
+// // where extension is derived from the specified filename.
+def versionedAssetName(filename, version) {
+  def extensionIndex = filename.lastIndexOf('.')
+  def basename = filename.substring(0, extensionIndex)
+  def extension = filename.substring(extensionIndex)
+  // Encode the DLL version and target names into the DLL in the form...
+  // ${dllname}_t${hypen_separated_target_names}_v${version}.dll
+  def targetName = basename
+  if (version != null && !version.isEmpty()) {
+    targetName += '_v' + version
+  }
+  return targetName + extension
+}
+
 /*
  * This is a top level task that build the Unity plugin.
  * It does the following:
@@ -241,6 +338,6 @@ task package_sample () {
  *  - Build the Google Sign-In Sample package (requires Unity).
  */
 task build_all() {
-        dependsOn copy_aar, copy_jarresolver, package_plugin, package_sample
+        dependsOn ':native-googlesignin:uploadArchives', copy_jarresolver, package_plugin, package_sample
 }
 

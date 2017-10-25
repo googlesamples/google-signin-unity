@@ -3,6 +3,12 @@
   <!-- See https://github.com/googlesamples/unity-jar-resolver#usage for
     how to configure dependencies -->
   <androidPackages>
+    <!-- Internal library dependency. -->
+    <androidPackage spec="com.google.signin:google-signin-support:1+">
+      <repositories>
+        <repository>Assets/GoogleSignIn/Editor/m2repository</repository>
+      </repositories>
+    </androidPackage>
     <!--- Auth  THIS IS ALWAYS REQUIRED -->
     <!-- The dependency is actually on 10.2, but 10+ is close enough.
          If you have problems, please change this to a concrete value.
