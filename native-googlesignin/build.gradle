@@ -13,6 +13,21 @@
  * limitations under the License.
  */
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
+
+group "com.google.signin"
+
+if (project.hasProperty("pluginVersion")) {
+  project.version = project.pluginVersion
+} else {
+  project.version '0-SNAPSHOT'
+}
+
+if (project.hasProperty("uploadDir")) {
+  project.ext.uploadDir = project.uploadDir
+} else {
+  project.ext.uploadDir = "${buildDir}/m2repository"
+}
 
 android {
     compileSdkVersion 26
@@ -20,8 +35,8 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        versionName project.version
+        archivesBaseName = 'google-signin-support'
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++11", "-Wall"
@@ -42,6 +57,14 @@ android {
             path "CMakeLists.txt"
         }
     }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      repository(url: uri(project.ext.uploadDir))
+    }
+  }
 }
 
 dependencies {

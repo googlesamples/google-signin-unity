@@ -156,4 +156,3 @@ sample scene and script in a separate package.
 
 ## Questions? Problems?
 Post questions to this [Github project](https://github.com/googlesamples/google-signin-unity).
-
