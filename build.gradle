@@ -66,7 +66,7 @@ project.ext {
         git_exe = 'git'
     }
 
-    pluginVersion = "1.0.1"
+    pluginVersion = "1.0.2"
     currentPluginBasename = 'google-signin-plugin'
     currentPluginName = (currentPluginBasename + '-' + pluginVersion +
                                      '.unitypackage')
@@ -297,13 +297,24 @@ task inject_versionIntoMetaFiles() {
   doLast {
     for (fileobj in fileTree("${pluginProjectPath}")) {
       if (fileobj.path.endsWith('.meta')) {
+        // Skip the manifest files for any previous versions
+        if (fileobj.path.contains("Editor/${currentPluginBasename}")) {
+          continue
+        }
         def lines = fileobj.text.split('\n')
         def outputLines = []
+        def added = false
         for (line in lines) {
           outputLines.add(line)
           if (line.contains('labels:')) {
             outputLines.add("- gvh_v${pluginVersion}")
+            added = true
+          } else if (line.contains('folderAsset:') && line.contains('yes')) {
+            added = true
           }
+        }
+        if (!added) {
+          outputLines.add("labels:\n- gvh_v${pluginVersion}")
         }
         fileobj.write(outputLines.join('\n') + '\n')
       }
