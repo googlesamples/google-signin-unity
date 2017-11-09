@@ -66,7 +66,7 @@ namespace Google {
     public static GoogleSignInConfiguration Configuration {
       set {
         // Can set the configuration until the singleton is created.
-        if (theInstance == null || theConfiguration == value) {
+        if (theInstance == null || theConfiguration == value || theConfiguration == null) {
           theConfiguration = value;
         } else {
           throw new SignInException(GoogleSignInStatusCode.DeveloperError,
@@ -141,6 +141,7 @@ namespace Google {
     /// account to use when signing in.
     /// </remarks>
     public void SignOut() {
+      theConfiguration = null;
       impl.SignOut();
     }
 
