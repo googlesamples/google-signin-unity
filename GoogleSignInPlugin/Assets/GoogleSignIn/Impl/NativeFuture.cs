@@ -65,6 +65,10 @@ namespace Google.Impl {
               GoogleSignInImpl.GoogleSignIn_GetIdToken(userPtr, out_string,
                                                        out_size));
 
+          user.AuthCode = OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetServerAuthCode(userPtr, out_string,
+                                                              out_size));
+
           string url = OutParamsToString((out_string, out_size) =>
               GoogleSignInImpl.GoogleSignIn_GetImageUrl(userPtr, out_string,
                                                         out_size));
