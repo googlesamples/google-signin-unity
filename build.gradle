@@ -66,7 +66,7 @@ project.ext {
         git_exe = 'git'
     }
 
-    pluginVersion = "1.0.1"
+    pluginVersion = "1.0.2"
     currentPluginBasename = 'google-signin-plugin'
     currentPluginName = (currentPluginBasename + '-' + pluginVersion +
                                      '.unitypackage')
@@ -178,6 +178,27 @@ task import_jarresolver() {
             throw new GradleException('error importing jarresolver plugin')
         }
     }
+}
+
+task generate_dependency_xml() {
+  description "Generate the JarResolver dependency file for the support library"
+  dependsOn copy_unity_project
+  doFirst {
+    def xmlFile = file("${pluginProjectPath}/${editorDir}/GoogleSignInSupportDependencies.xml")
+
+    xmlFile << '<?xml version="1.0" encoding="UTF-8" ?>\n'
+    xmlFile << '<dependencies>\n'
+    xmlFile << '<!-- Internal library dependency generated at build time. -->\n'
+    xmlFile << '  <androidPackages>\n'
+    xmlFile << '    <androidPackage spec="com.google.signin:google-signin-support:'
+    xmlFile << "${pluginVersion}\">\n"
+    xmlFile << '      <repositories>\n'
+    xmlFile << '        <repository>Assets/GoogleSignIn/Editor/m2repository</repository>\n'
+    xmlFile << '      </repositories>\n'
+    xmlFile << '    </androidPackage>\n'
+    xmlFile << '  </androidPackages>\n'
+    xmlFile << '</dependencies>\n'
+  }
 }
 
 task generate_manifest(dependsOn: [ 'inject_versionIntoMetaFiles']) {
@@ -293,17 +314,28 @@ task package_sample () {
 
 task inject_versionIntoMetaFiles() {
   description 'Inject the version number into the plugin\'s meta files.'
-  dependsOn copy_unity_project, import_jarresolver
+  dependsOn copy_unity_project, generate_dependency_xml, import_jarresolver
   doLast {
     for (fileobj in fileTree("${pluginProjectPath}")) {
       if (fileobj.path.endsWith('.meta')) {
+        // Skip the manifest files for any previous versions
+        if (fileobj.path.contains("Editor/${currentPluginBasename}")) {
+          continue
+        }
         def lines = fileobj.text.split('\n')
         def outputLines = []
+        def added = false
         for (line in lines) {
           outputLines.add(line)
           if (line.contains('labels:')) {
             outputLines.add("- gvh_v${pluginVersion}")
+            added = true
+          } else if (line.contains('folderAsset:') && line.contains('yes')) {
+            added = true
           }
+        }
+        if (!added) {
+          outputLines.add("labels:\n- gvh_v${pluginVersion}")
         }
         fileobj.write(outputLines.join('\n') + '\n')
       }
