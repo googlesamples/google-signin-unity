@@ -139,10 +139,12 @@ class GoogleSignIn::GoogleSignInImpl {
 };
 
 const JNINativeMethod GoogleSignIn::GoogleSignInImpl::methods[] = {
+  {
     NATIVEONRESULT_METHOD_NAME,
     NATIVEONRESULT_METHOD_SIG,
     reinterpret_cast<void *>(
         GoogleSignIn::GoogleSignInImpl::NativeOnAuthResult),
+  },
 };
 
 jclass GoogleSignIn::GoogleSignInImpl::helper_clazz_ = 0;
