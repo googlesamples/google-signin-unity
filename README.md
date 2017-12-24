@@ -16,7 +16,7 @@ for more information.
 
 ## Configuring the application  on the API Console
 
-To authenticate you need create credentials on the API console for your
+To authenticate you need to create credentials on the API console for your
 application. The steps to do this are available on
 [Google Sign-In for Android](https://developers.google.com/identity/sign-in/android/start)
 or as part of Firebase configuration.
