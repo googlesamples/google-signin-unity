@@ -72,7 +72,9 @@ namespace Google.Impl {
           string url = OutParamsToString((out_string, out_size) =>
               GoogleSignInImpl.GoogleSignIn_GetImageUrl(userPtr, out_string,
                                                         out_size));
-          user.ImageUrl = new System.Uri(url);
+          if (url.Length > 0) {
+            user.ImageUrl = new System.Uri(url);
+          }
 
           user.UserId = OutParamsToString((out_string, out_size) =>
               GoogleSignInImpl.GoogleSignIn_GetUserId(userPtr, out_string,
