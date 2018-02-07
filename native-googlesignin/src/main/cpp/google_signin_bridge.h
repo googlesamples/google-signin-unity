@@ -20,6 +20,7 @@
 // primarily by the Unity plugin.
 
 #include <jni.h>
+#include <stddef.h>
 
 struct GoogleSignInHolder;
 typedef GoogleSignInHolder* GoogleSignIn_t;

@@ -149,9 +149,11 @@ The steps are:
 
 
 ## Building the Plugin
-To build the plugin run `./gradlew build_all`. This builds the support aar
-library, and packages the plugin into a .unitypackage file.  It also packages the
-sample scene and script in a separate package.
+To build the plugin run `./gradlew -PlintAbortOnError build_all`. This builds the support aar
+library with lint warnings as errors and packages the plugin into a .unitypackage file.  It
+also packages the sample scene and script in a separate package.
+
+There's also a shortcut for linux/mac: `./build_all`.
 
 
 ## Questions? Problems?

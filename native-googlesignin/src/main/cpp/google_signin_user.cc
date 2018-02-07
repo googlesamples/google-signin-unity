@@ -101,7 +101,7 @@ void GoogleSignInUserImpl::Initialize(jobject obj) {
 
     jclass uri_class = FindClass(URI_NAME, obj);
     method_uri_toString = env->GetMethodID(
-        google_acct_class, TOSTRING_METHOD_NAME, TOSTRING_METHOD_SIG);
+        uri_class, TOSTRING_METHOD_NAME, TOSTRING_METHOD_SIG);
 
     method_getServerAuthCode =
         env->GetMethodID(google_acct_class, GETSERVERAUTHCODE_METHOD_NAME,

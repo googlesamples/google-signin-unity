@@ -33,7 +33,7 @@ project.ext.baseName = "google-signin-support"
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "25.0.3"
+    buildToolsVersion "26.0.3"
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 26
@@ -47,6 +47,11 @@ android {
         ndk {
             abiFilters 'x86', 'armeabi-v7a'
         }
+    }
+    lintOptions {
+        abortOnError (project.hasProperty("lintAbortOnError") &&
+                      (project.lintAbortOnError == "" ||
+                       project.lintAbortOnError.toBoolean()))
     }
     buildTypes {
         release {
