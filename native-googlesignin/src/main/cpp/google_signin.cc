@@ -234,7 +234,7 @@ void GoogleSignIn::GoogleSignInImpl::Configure(
   delete current_result_;
   current_result_ = new GoogleSignInFuture();
 
-  CallConfigure();
+  //CallConfigure();
 }
 
 void GoogleSignIn::GoogleSignInImpl::CallConfigure() {
