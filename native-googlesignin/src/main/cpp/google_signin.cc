@@ -234,7 +234,7 @@ void GoogleSignIn::GoogleSignInImpl::Configure(
   delete current_result_;
   current_result_ = new GoogleSignInFuture();
 
-  //CallConfigure();
+  CallConfigure();
 }
 
 void GoogleSignIn::GoogleSignInImpl::CallConfigure() {
@@ -299,7 +299,7 @@ Future<GoogleSignIn::SignInResult> &GoogleSignIn::GoogleSignInImpl::SignIn() {
     current_result_->SetResult(nullptr);
   }
 
-  CallConfigure();
+  //CallConfigure();
 
   env->CallStaticVoidMethod(helper_clazz_, signin_method_, activity_,
                             (jlong)current_result_);
@@ -315,7 +315,7 @@ Future<GoogleSignIn::SignInResult>
     current_result_->SetResult(nullptr);
   }
 
-  CallConfigure();
+  //CallConfigure();
 
   env->CallStaticVoidMethod(helper_clazz_, signinsilently_method_, activity_,
                             (jlong)current_result_);
