@@ -35,16 +35,6 @@ static const int kStatusCodeInternalError = 7;
 static const int kStatusCodeNetworkError = 8;
 static const int kStatusCodeError = 9;
 
-/**
- * Helper method to pause the Unity player.  This is done when showing any UI.
- */
-void UnpauseUnityPlayer() {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    if (UnityIsPaused() > 0) {
-      UnityPause(0);
-    }
-  });
-}
 
 // result for pending operation.  Access to this should be protected using the
 // resultLock.
@@ -58,26 +48,6 @@ std::unique_ptr<SignInResult> currentResult_;
 NSRecursiveLock *resultLock = [NSRecursiveLock alloc];
 
 @implementation GoogleSignInHandler
-
-/**
- * Overload the presenting of the UI so we can pause the Unity player.
- */
-- (void)signIn:(GIDSignIn *)signIn
-    presentViewController:(UIViewController *)viewController {
-  UnityPause(true);
-  [UnityGetGLViewController() presentViewController:viewController
-                                           animated:YES
-                                         completion:nil];
-}
-
-/**
- * Overload the dismissing so we can resume the Unity player.
- */
-- (void)signIn:(GIDSignIn *)signIn
-    dismissViewController:(UIViewController *)viewController {
-  UnityPause(false);
-  [UnityGetGLViewController() dismissViewControllerAnimated:YES completion:nil];
-}
 
 /**
  * The sign-in flow has finished and was successful if |error| is |nil|.
@@ -121,7 +91,6 @@ NSRecursiveLock *resultLock = [NSRecursiveLock alloc];
       }
 
       currentResult_->finished = true;
-      UnpauseUnityPlayer();
     } else {
       NSLog(@"No currentResult to set status on!");
     }
