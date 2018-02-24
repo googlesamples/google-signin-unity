@@ -1,5 +1,4 @@
-//
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2018 Google Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 #include "google_signin_user.h"  // NOLINT
 #include <android/log.h>
 
 #include "google_signin_user_impl.h"  // NOLINT
-#include "jni_init.h"                 // NOLINT
+#include "jni_context.h"                 // NOLINT
 
 #define GOOGLESIGNINACCOUNT_NAME \
   "com/google/android/gms/auth/api/signin/GoogleSignInAccount"
@@ -59,7 +57,8 @@
 #define TOSTRING_METHOD_NAME "toString"
 #define TOSTRING_METHOD_SIG "()Ljava/lang/String;"
 
-namespace googlesignin {
+namespace google {
+namespace signin {
 
 jmethodID GoogleSignInUserImpl::method_getDisplayName = 0;
 jmethodID GoogleSignInUserImpl::method_getEmail = 0;
@@ -71,11 +70,11 @@ jmethodID GoogleSignInUserImpl::method_getPhotoUrl = 0;
 jmethodID GoogleSignInUserImpl::method_getServerAuthCode = 0;
 jmethodID GoogleSignInUserImpl::method_uri_toString = 0;
 
-void GoogleSignInUserImpl::Initialize(jobject obj) {
-  JNIEnv* env = GetJniEnv();
+void GoogleSignInUserImpl::Initialize(JNIContext &jni_context) {
+  JNIEnv* env = jni_context.GetJniEnv();
 
   if (!method_getDisplayName) {
-    jclass google_acct_class = FindClass(GOOGLESIGNINACCOUNT_NAME, obj);
+    jclass google_acct_class = jni_context.FindClass(GOOGLESIGNINACCOUNT_NAME);
 
     method_getDisplayName =
         env->GetMethodID(google_acct_class, GETDISPLAYNAME_METHOD_NAME,
@@ -99,7 +98,7 @@ void GoogleSignInUserImpl::Initialize(jobject obj) {
     method_getPhotoUrl = env->GetMethodID(
         google_acct_class, GETPHOTOURL_METHOD_NAME, GETPHOTOURL_METHOD_SIG);
 
-    jclass uri_class = FindClass(URI_NAME, obj);
+    jclass uri_class = jni_context.FindClass(URI_NAME);
     method_uri_toString = env->GetMethodID(
         uri_class, TOSTRING_METHOD_NAME, TOSTRING_METHOD_SIG);
 
@@ -135,56 +134,41 @@ const char* GoogleSignInUser::GetUserId() const {
   return impl_->user_id.c_str();
 }
 
-void StringFromJava(jstring j_str, std::string* dest) {
-  if (!j_str) {
-    dest->clear();
-    return;
-  }
-  JNIEnv* env = GetJniEnv();
-  const char* buf = env->GetStringUTFChars(j_str, nullptr);
-
-  *dest = buf;
-
-  __android_log_print(ANDROID_LOG_INFO, "native-googlesignin",
-                      "StringFromJava %s == %s", dest->c_str(), buf);
-
-  env->ReleaseStringUTFChars(j_str, buf);
-}
-
-GoogleSignInUser* GoogleSignInUserImpl::UserFromAccount(jobject user_account) {
+GoogleSignInUser* GoogleSignInUserImpl::UserFromAccount(JNIContext &jni_context,
+    jobject user_account) {
   if (!user_account) {
     return nullptr;
   }
-  JNIEnv* env = GetJniEnv();
+  JNIEnv* env = jni_context.GetJniEnv();
   GoogleSignInUserImpl* user_impl = new GoogleSignInUserImpl();
 
   if (!GoogleSignInUserImpl::method_getDisplayName) {
-    GoogleSignInUserImpl::Initialize(user_account);
+    GoogleSignInUserImpl::Initialize(jni_context);
   }
 
   jstring val = static_cast<jstring>(env->CallObjectMethod(
       user_account, GoogleSignInUserImpl::method_getDisplayName));
-  StringFromJava(val, &user_impl->display_name);
+  user_impl->display_name = jni_context.JStringToString(val);
 
   val = static_cast<jstring>(env->CallObjectMethod(
       user_account, GoogleSignInUserImpl::method_getEmail));
-  StringFromJava(val, &user_impl->email);
+  user_impl->email = jni_context.JStringToString(val);
 
   val = static_cast<jstring>(env->CallObjectMethod(
       user_account, GoogleSignInUserImpl::method_getFamilyName));
-  StringFromJava(val, &user_impl->family_name);
+  user_impl->family_name = jni_context.JStringToString(val);
 
   val = static_cast<jstring>(env->CallObjectMethod(
       user_account, GoogleSignInUserImpl::method_getGivenName));
-  StringFromJava(val, &user_impl->given_name);
+  user_impl->given_name = jni_context.JStringToString(val);
 
   val = static_cast<jstring>(
       env->CallObjectMethod(user_account, GoogleSignInUserImpl::method_getId));
-  StringFromJava(val, &user_impl->user_id);
+  user_impl->user_id = jni_context.JStringToString(val);
 
   val = static_cast<jstring>(env->CallObjectMethod(
       user_account, GoogleSignInUserImpl::method_getIdToken));
-  StringFromJava(val, &user_impl->id_token);
+  user_impl->id_token = jni_context.JStringToString(val);
 
   jobject uri = env->CallObjectMethod(user_account,
                                       GoogleSignInUserImpl::method_getPhotoUrl);
@@ -194,13 +178,14 @@ GoogleSignInUser* GoogleSignInUserImpl::UserFromAccount(jobject user_account) {
   } else {
     val = nullptr;
   }
-  StringFromJava(val, &user_impl->image_url);
+  user_impl->image_url = jni_context.JStringToString(val);
 
   val = static_cast<jstring>(env->CallObjectMethod(
       user_account, GoogleSignInUserImpl::method_getServerAuthCode));
-  StringFromJava(val, &user_impl->server_auth_code);
+  user_impl->server_auth_code = jni_context.JStringToString(val);
 
   return new GoogleSignInUser(user_impl);
 }
 
-}  // namespace googlesignin
+}  // namespace signin
+}  // namespace google

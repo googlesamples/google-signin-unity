@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Google Inc.
+# Copyright 2018 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-##
 
 # For more information about using CMake with Android Studio, read the
 # documentation: https://d.android.com/studio/projects/add-native-code.html
@@ -20,43 +19,33 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+include_directories( ../include )
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
 add_library( # Sets the name of the library.
-             native-googlesignin
+             google-signin-cpp
 
              # Sets the library as a shared library.
-             SHARED
+             STATIC
 
              # Provides a relative path to your source file(s).
-             src/main/cpp/google_signin_bridge.cc
-             src/main/cpp/google_signin.cc
-             src/main/cpp/google_signin_user.cc
-             src/main/cpp/jni.cc)
+             google_signin.cc
+             google_signin_user.cc
+             jni.cc)
 
-# Searches for a specified prebuilt library and stores the path as a
-# variable. Because CMake includes system libraries in the search path by
-# default, you only need to specify the name of the public NDK library
-# you want to add. CMake verifies that the library exists before
-# completing its build.
+set(PACKAGE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../google-signin-cpp)
+MAKE_DIRECTORY("${PACKAGE_DIR}/include")
+set_target_properties(google-signin-cpp
+                      PROPERTIES
+                      ARCHIVE_OUTPUT_DIRECTORY
+                      "${PACKAGE_DIR}/lib/${ANDROID_ABI}")
 
-find_library( # Sets the name of the path variable.
-              log-lib
-
-              # Specifies the name of the NDK library that
-              # you want CMake to locate.
-              log )
-
-# Specifies libraries CMake should link to your target library. You
-# can link multiple libraries, such as libraries you define in this
-# build script, prebuilt third-party libraries, or system libraries.
-
-target_link_libraries( # Specifies the target library.
-                       native-googlesignin
-
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib} )
+add_custom_command(TARGET google-signin-cpp POST_BUILD
+                   COMMAND "${CMAKE_COMMAND}" -E
+                   copy "${CMAKE_CURRENT_SOURCE_DIR}/../include/*.h"
+                   "${PACKAGE_DIR}/include"
+                   COMMENT "Copying public headers to output package")

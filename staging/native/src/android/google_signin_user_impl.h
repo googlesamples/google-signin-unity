@@ -1,16 +1,16 @@
-// Copyright (C) 2017 Google Inc. All Rights Reserved.
+// Copyright 2018 Google Inc. All rights reserved.
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//  http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//    limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef GOOGLESIGNIN_GOOGLE_SIGNIN_USER_IMPL_H
 #define GOOGLESIGNIN_GOOGLE_SIGNIN_USER_IMPL_H
@@ -18,7 +18,11 @@
 #include <jni.h>
 #include <string>
 
-namespace googlesignin {
+namespace google {
+namespace signin {
+
+class JNIContext;
+
 class GoogleSignInUserImpl {
  public:
   std::string display_name;
@@ -39,8 +43,11 @@ class GoogleSignInUserImpl {
   static jmethodID method_getServerAuthCode;
   static jmethodID method_uri_toString;
 
-  static void Initialize(jobject obj);
-  static GoogleSignInUser *UserFromAccount(jobject user_account);
+  static void Initialize(JNIContext &jni_context);
+  static GoogleSignInUser *UserFromAccount(JNIContext &jni_context,
+                                           jobject user_account);
 };
-}  // namespace googlesignin
+
+}  // namespace signin
+}  // namespace google
 #endif  // GOOGLESIGNIN_GOOGLE_SIGNIN_USER_IMPL_H
