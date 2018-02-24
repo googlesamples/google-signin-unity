@@ -1,5 +1,6 @@
 .gradle/
 .idea/
+.vscode/
 bin/
 build/
 *.iml
@@ -23,3 +24,5 @@ GoogleSignInPlugin/Assets/Plugins/iOS/client*.plist*
 
 Assembly-CSharp-Editor.csproj
 Assembly-CSharp.csproj
+contents.xcworkspacedata
+staging/native/testapp/testapp.xcodeproj/project.xcworkspace/xcuserdata
