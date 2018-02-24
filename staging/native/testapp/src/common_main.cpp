@@ -19,83 +19,61 @@
 
 #include "main.h"
 
-//#include "google_signin.h"
-//#include "future.h"
+#include "google_signin.h"
+#include "future.h"
 
-//using namespace google::signin;
+using namespace google::signin;
 
 // Don't return until `future` is complete.
 // Print a message for whether the result mathes our expectations.
 // Returns true if the application should exit.
-// template <typename T>
-// static bool WaitForFuture(Future<T> future, const char* fn,
-//                           GoogleSignIn::StatusCode expected_error, bool log_error = true) {
-//   // Note if the future has not be started properly.
-//   if (future.Status() == GoogleSignIn::kStatusCodeUninitialized) {
-//     LogMessage("ERROR: Future for %s is invalid", fn);
-//     return false;
-//   }
+template <typename T>
+bool WaitForFuture(Future<T> &future, const char* fn,
+                   GoogleSignIn::StatusCode expected_error,
+                   bool log_error = true) {
+  // Wait for future to complete.
+  LogMessage("  Calling %s...", fn);
+  while (future.Pending()) {
+    if (ProcessEvents(100)) return true;
+  }
 
-//   // Wait for future to complete.
-//   LogMessage("  Calling %s...", fn);
-//   while (future.Pending()) {
-//     if (ProcessEvents(100)) return true;
-//   }
-
-//   // Log error result.
-//   if (log_error) {
-//     const GoogleSignIn::StatusCode error = static_cast<GoogleSignIn::StatusCode>(future.Status());
-//     if (error == expected_error) {
-//       LogMessage("%s completed as expected", fn);
-//     } else {
-//       LogMessage("ERROR: %s completed with error: %d", fn, error);
-//     }
-//   }
-//   return false;
-// }
-
+  // Log error result.
+  if (log_error) {
+    const GoogleSignIn::StatusCode error =
+        static_cast<GoogleSignIn::StatusCode>(future.Status());
+    if (error == expected_error) {
+      LogMessage("%s completed as expected", fn);
+    } else {
+      LogMessage("ERROR: %s completed with error: %d", fn, error);
+    }
+  }
+  return false;
+}
 
 extern "C" int common_main(int argc, const char* argv[]) {
 
     LogMessage("GSI Testapp Initialized!");
 
-//     GoogleSignIn::Configuration config = {};
-//     // This is a client ID created from the Android Debug.Keystore
-//     config.web_client_id = "64192632067-d37vn8fg59u8pvdgc7lc8jeve9mbbd7o.apps.googleusercontent.com";
-//     config.request_id_token = true;
-//     config.use_game_signin = false;
-//     config.request_auth_code = false;
+    GoogleSignIn::Configuration config = {};
+    config.web_client_id = "64192632067-d37vn8fg59u8pvdgc7lc8jeve9mbbd7o.apps.googleusercontent.com"; // "YOUR_WEB_CLIENT_ID_HERE";
+    config.request_id_token = true;
+    config.use_game_signin = false;
+    config.request_auth_code = false;
 
-//     LogMessage("Constructing...");
-//     GoogleSignIn gsi = GoogleSignIn();
-//     LogMessage("Calling Configure...");
-//     gsi.Configure(config);
+    LogMessage("Constructing...");
+#if defined(__ANDROID__)
+    GoogleSignIn gsi = GoogleSignIn(GetActivity(), GetJavaVM());
+#else
+    GoogleSignIn gsi = GoogleSignIn();
+#endif  // defined(__ANDROID__)
 
-//     LogMessage("Calling SignIn...");
-//     Future<GoogleSignIn::SignInResult> &future = gsi.SignIn();
-//     bool log_error = true;
-// //    WaitForFuture<GoogleSignIn::SignInResult>(result_future, "GoogleSignIn::SignIn()", GoogleSignIn::kStatusCodeSuccess);
-//     const char *fn = "GoogleSignIn::SignIn()";
-//     GoogleSignIn::StatusCode expected_error = GoogleSignIn::kStatusCodeSuccess;
-//     if (future.Status() == GoogleSignIn::kStatusCodeUninitialized) {
-//         LogMessage("ERROR: Future for %s is invalid", fn);
-//     }
+    LogMessage("Calling Configure...");
+    gsi.Configure(config);
 
-//     // Wait for future to complete.
-//     LogMessage("  Calling %s...", fn);
-//     while (future.Pending()) {
-//         if (ProcessEvents(100)) return true;
-//     }
+    LogMessage("Calling SignIn...");
+    Future<GoogleSignIn::SignInResult> &future = gsi.SignIn();
+    WaitForFuture(future, "GoogleSignIn::SignIn()", GoogleSignIn::kStatusCodeSuccess);
 
-//     // Log error result.
-//     if (log_error) {
-//         const GoogleSignIn::StatusCode error = static_cast<GoogleSignIn::StatusCode>(future.Status());
-//         if (error == expected_error) {
-//             LogMessage("%s completed as expected", fn);
-//         } else {
-//             LogMessage("ERROR: %s completed with error: %d", fn, error);
-//         }
-//     }
     while (!ProcessEvents(1000)) {
     }
 

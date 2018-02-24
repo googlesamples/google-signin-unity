@@ -18,6 +18,8 @@
 #if defined(__ANDROID__)
 #include <android/native_activity.h>
 #include <jni.h>
+jobject GetActivity();
+JavaVM* GetJavaVM();
 #elif defined(__APPLE__)
 extern "C" {
 #include <objc/objc.h>
@@ -29,7 +31,6 @@ extern "C" {
 #ifndef APP_NAME
 #define APP_NAME "gsi_testapp"
 #endif  // APP_NAME
-
 
 // WindowContext represents the handle to the parent window.  It's type
 // (and usage) vary based on the OS.
