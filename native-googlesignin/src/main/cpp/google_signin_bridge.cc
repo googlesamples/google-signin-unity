@@ -103,17 +103,27 @@ void GoogleSignIn_Configure(GoogleSignIn_t self, bool useGameSignIn,
                             bool requestIdToken, bool hidePopups,
                             const char **additional_scopes, int scopes_count,
                             const char *accountName) {
-  self->wrapped_->Configure(googlesignin::GoogleSignIn::Configuration{
-      .use_game_signin = useGameSignIn,
-      .web_client_id = webClientId,
-      .request_auth_code = requestAuthCode,
-      .force_token_refresh = forceTokenRefresh,
-      .request_email = requestEmail,
-      .request_id_token = requestIdToken,
-      .hide_ui_popups = hidePopups,
-      .additional_scopes = additional_scopes,
-      .additional_scope_count = scopes_count,
-      .account_name = accountName});
+  googlesignin::GoogleSignIn::Configuration configuration;
+
+  configuration.use_game_signin = useGameSignIn;
+  if (webClientId) {
+    configuration.web_client_id = webClientId;
+  }
+  configuration.request_auth_code = requestAuthCode;
+  configuration.force_token_refresh = forceTokenRefresh;
+  configuration.request_email = requestEmail;
+  configuration.request_id_token = requestIdToken;
+  configuration.hide_ui_popups = hidePopups;
+  if (accountName) {
+    configuration.account_name = accountName;
+  }
+  if (scopes_count) {
+    for(int i=0;i<scopes_count;i++) {
+      configuration.additional_scopes.push_back(std::string(additional_scopes[i]));
+    }
+  }
+
+  self->wrapped_->Configure(configuration);
 }
 
 GoogleSignInFuture_t GoogleSignIn_SignIn(GoogleSignIn_t self) {

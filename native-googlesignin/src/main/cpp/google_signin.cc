@@ -229,10 +229,6 @@ void GoogleSignIn::GoogleSignInImpl::Configure(
   delete current_configuration_;
   current_configuration_ = new Configuration(configuration);
 
-  if (configuration.web_client_id) {
-    current_configuration_->web_client_id = strdup(configuration.web_client_id);
-  }
-
   delete current_result_;
   current_result_ = new GoogleSignInFuture();
 
@@ -247,26 +243,24 @@ void GoogleSignIn::GoogleSignInImpl::CallConfigure() {
     return;
   }
   jstring j_web_client_id =
-      current_configuration_->web_client_id
-          ? env->NewStringUTF(current_configuration_->web_client_id)
-          : nullptr;
+      current_configuration_->web_client_id.empty() ? nullptr
+          : env->NewStringUTF(current_configuration_->web_client_id.c_str());
 
   jstring j_account_name =
-      current_configuration_->account_name
-          ? env->NewStringUTF(current_configuration_->account_name)
-          : nullptr;
+      current_configuration_->account_name.empty() ? nullptr
+          : env->NewStringUTF(current_configuration_->account_name.c_str());
 
   jobjectArray j_auth_scopes = nullptr;
 
-  if (current_configuration_->additional_scope_count > 0) {
+  if (current_configuration_->additional_scopes.size() > 0) {
     jclass string_clazz = FindClass("java/lang/String", activity_);
     j_auth_scopes = env->NewObjectArray(
-        current_configuration_->additional_scope_count, string_clazz, nullptr);
+            current_configuration_->additional_scopes.size(), string_clazz, nullptr);
 
-    for (int i = 0; i < current_configuration_->additional_scope_count; i++) {
+    for (int i = 0; i < current_configuration_->additional_scopes.size(); i++) {
       env->SetObjectArrayElement(
           j_auth_scopes, i,
-          env->NewStringUTF(current_configuration_->additional_scopes[i]));
+          env->NewStringUTF(current_configuration_->additional_scopes[i].c_str()));
     }
     env->DeleteLocalRef(string_clazz);
   }

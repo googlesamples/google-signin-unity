@@ -1,22 +1,22 @@
-// Copyright 2018 Google Inc. All rights reserved.
+// Copyright (C) 2017 Google Inc. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//  http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//    limitations under the License.
 
 #include "google_signin.h"
 #include <android/log.h>
 #include <cassert>
 #include "google_signin_user_impl.h"
-#include "jni_context.h"
+#include "jni_init.h"
 
 #define TAG "native-googlesignin"
 #define HELPER_CLASSNAME "com/google/googlesignin/GoogleSignInHelper"
@@ -85,8 +85,7 @@ public static void nativeOnResult(long requestHandle, int result,
   "Lcom/google/android/gms/auth/api/signin/GoogleSignInAccount;" \
   ")V"
 
-namespace google {
-namespace signin {
+namespace googlesignin {
 
 class GoogleSignInFuture;
 
@@ -95,13 +94,13 @@ class GoogleSignInFuture;
 // For the public methods see google_signin.h for details.
 class GoogleSignIn::GoogleSignInImpl {
  public:
-  JNIContext jni_;
+  jobject activity_;
   GoogleSignInFuture *current_result_;
   Configuration *current_configuration_;
 
   // Constructs the implementation providing the Java activity to use when
   // making calls.
-  GoogleSignInImpl(jobject activity, JavaVM *vm);
+  GoogleSignInImpl(jobject activity);
   ~GoogleSignInImpl();
 
   void Configure(const Configuration &configuration);
@@ -122,8 +121,8 @@ class GoogleSignIn::GoogleSignInImpl {
   void Disconnect();
 
   // Native method implementation for the Java class.
-  static void NativeOnAuthResult(JNIContext &jni_context, jobject obj,
-                                 jlong handle, jint result, jobject user);
+  static void NativeOnAuthResult(JNIEnv *env, jobject obj, jlong handle,
+                                 jint result, jobject user);
 
  private:
   void CallConfigure();
@@ -177,16 +176,18 @@ class GoogleSignInFuture : public Future<GoogleSignIn::SignInResult> {
 };
 
 // Constructs a new instance.  The static members are initialized if need-be.
-GoogleSignIn::GoogleSignInImpl::GoogleSignInImpl(jobject activity, JavaVM *vm)
-    : jni_(activity, vm), current_result_(nullptr),
-      current_configuration_(nullptr) {
-  JNIEnv *env = jni_.GetJniEnv();
+GoogleSignIn::GoogleSignInImpl::GoogleSignInImpl(jobject activity)
+    : current_result_(nullptr), current_configuration_(nullptr) {
+  JNIEnv *env = GetJniEnv();
+
+  activity_ = env->NewGlobalRef(activity);
 
   if (!helper_clazz_) {
     // Find the java  helper class and initialize it.
-    helper_clazz_ = jni_.FindClass(HELPER_CLASSNAME);
+    helper_clazz_ = FindClass(HELPER_CLASSNAME, activity);
 
     assert(helper_clazz_);
+
     if (helper_clazz_) {
       helper_clazz_ = (jclass)env->NewGlobalRef(helper_clazz_);
       env->RegisterNatives(helper_clazz_, methods,
@@ -208,24 +209,25 @@ GoogleSignIn::GoogleSignInImpl::GoogleSignInImpl(jobject activity, JavaVM *vm)
 }
 
 GoogleSignIn::GoogleSignInImpl::~GoogleSignInImpl() {
+  JNIEnv *env = GetJniEnv();
+
+  env->DeleteGlobalRef(activity_);
+  activity_ = nullptr;
   delete current_result_;
   current_result_ = nullptr;
 }
 
 void GoogleSignIn::GoogleSignInImpl::EnableDebugLogging(bool flag) {
-  JNIEnv *env = jni_.GetJniEnv();
+  JNIEnv *env = GetJniEnv();
 
   env->CallStaticVoidMethod(helper_clazz_, enable_debug_method_, flag);
+
 }
 
 void GoogleSignIn::GoogleSignInImpl::Configure(
     const Configuration &configuration) {
   delete current_configuration_;
   current_configuration_ = new Configuration(configuration);
-
-  if (configuration.web_client_id) {
-    current_configuration_->web_client_id = strdup(configuration.web_client_id);
-  }
 
   delete current_result_;
   current_result_ = new GoogleSignInFuture();
@@ -234,40 +236,37 @@ void GoogleSignIn::GoogleSignInImpl::Configure(
 }
 
 void GoogleSignIn::GoogleSignInImpl::CallConfigure() {
-  JNIEnv *env = jni_.GetJniEnv();
+  JNIEnv *env = GetJniEnv();
 
   if (!current_configuration_) {
     __android_log_print(ANDROID_LOG_ERROR, TAG, "configuration is null!?");
     return;
   }
   jstring j_web_client_id =
-      current_configuration_->web_client_id
-          ? env->NewStringUTF(current_configuration_->web_client_id)
-          : nullptr;
+      current_configuration_->web_client_id.empty() ? nullptr
+          : env->NewStringUTF(current_configuration_->web_client_id.c_str());
 
   jstring j_account_name =
-      current_configuration_->account_name
-          ? env->NewStringUTF(current_configuration_->account_name)
-          : nullptr;
+      current_configuration_->account_name.empty() ? nullptr
+          : env->NewStringUTF(current_configuration_->account_name.c_str());
 
   jobjectArray j_auth_scopes = nullptr;
 
-  if (current_configuration_->additional_scope_count > 0) {
-    jclass string_clazz = jni_.FindClass("java/lang/String");
+  if (current_configuration_->additional_scopes.size() > 0) {
+    jclass string_clazz = FindClass("java/lang/String", activity_);
     j_auth_scopes = env->NewObjectArray(
-        current_configuration_->additional_scope_count, string_clazz, nullptr);
+            current_configuration_->additional_scopes.size(), string_clazz, nullptr);
 
-    for (int i = 0; i < current_configuration_->additional_scope_count; i++) {
+    for (int i = 0; i < current_configuration_->additional_scopes.size(); i++) {
       env->SetObjectArrayElement(
           j_auth_scopes, i,
-          env->NewStringUTF(current_configuration_->additional_scopes[i]));
+          env->NewStringUTF(current_configuration_->additional_scopes[i].c_str()));
     }
     env->DeleteLocalRef(string_clazz);
   }
 
-  jobject j_activity = jni_.GetActivity();
   env->CallStaticVoidMethod(
-      helper_clazz_, config_method_, j_activity,
+      helper_clazz_, config_method_, activity_,
       current_configuration_->use_game_signin, j_web_client_id,
       current_configuration_->request_auth_code,
       current_configuration_->force_token_refresh,
@@ -275,7 +274,6 @@ void GoogleSignIn::GoogleSignInImpl::CallConfigure() {
       current_configuration_->request_id_token,
       current_configuration_->hide_ui_popups, j_account_name, j_auth_scopes,
       reinterpret_cast<jlong>(current_result_));
-  env->DeleteLocalRef(j_activity);
 
   if (j_web_client_id) {
     env->DeleteLocalRef(j_web_client_id);
@@ -291,7 +289,7 @@ void GoogleSignIn::GoogleSignInImpl::CallConfigure() {
 }
 
 Future<GoogleSignIn::SignInResult> &GoogleSignIn::GoogleSignInImpl::SignIn() {
-  JNIEnv *env = jni_.GetJniEnv();
+  JNIEnv *env = GetJniEnv();
 
   if (current_result_) {
     current_result_->SetResult(nullptr);
@@ -299,17 +297,15 @@ Future<GoogleSignIn::SignInResult> &GoogleSignIn::GoogleSignInImpl::SignIn() {
 
   CallConfigure();
 
-  jobject j_activity = jni_.GetActivity();
-  env->CallStaticVoidMethod(helper_clazz_, signin_method_, j_activity,
+  env->CallStaticVoidMethod(helper_clazz_, signin_method_, activity_,
                             (jlong)current_result_);
-  env->DeleteLocalRef(j_activity);
 
   return *current_result_;
 }
 
 Future<GoogleSignIn::SignInResult>
     &GoogleSignIn::GoogleSignInImpl::SignInSilently() {
-  JNIEnv *env = jni_.GetJniEnv();
+  JNIEnv *env = GetJniEnv();
 
   if (current_result_) {
     current_result_->SetResult(nullptr);
@@ -317,10 +313,8 @@ Future<GoogleSignIn::SignInResult>
 
   CallConfigure();
 
-  jobject j_activity = jni_.GetActivity();
-  env->CallStaticVoidMethod(helper_clazz_, signinsilently_method_, j_activity,
+  env->CallStaticVoidMethod(helper_clazz_, signinsilently_method_, activity_,
                             (jlong)current_result_);
-  env->DeleteLocalRef(j_activity);
 
   return *current_result_;
 }
@@ -333,34 +327,30 @@ const Future<GoogleSignIn::SignInResult>
 
 // Signs out.
 void GoogleSignIn::GoogleSignInImpl::SignOut() {
-  JNIEnv *env = jni_.GetJniEnv();
+  JNIEnv *env = GetJniEnv();
 
-  jobject j_activity = jni_.GetActivity();
   __android_log_print(ANDROID_LOG_INFO, TAG,
                       "helper: %x method: %x activity: %x",
                       (uintptr_t)helper_clazz_, (uintptr_t)signin_method_,
-                      (uintptr_t)j_activity);
+                      (uintptr_t)activity_);
 
-  env->CallStaticVoidMethod(helper_clazz_, signout_method_, j_activity);
-  env->DeleteLocalRef(j_activity);
+  env->CallStaticVoidMethod(helper_clazz_, signout_method_, activity_);
 }
 
 // Signs out.
 void GoogleSignIn::GoogleSignInImpl::Disconnect() {
-  JNIEnv *env = jni_.GetJniEnv();
+  JNIEnv *env = GetJniEnv();
 
-  jobject j_activity = jni_.GetActivity();
-  env->CallStaticVoidMethod(helper_clazz_, disconnect_method_, j_activity);
-  env->DeleteLocalRef(j_activity);
+  env->CallStaticVoidMethod(helper_clazz_, disconnect_method_, activity_);
 }
 
-void GoogleSignIn::GoogleSignInImpl::NativeOnAuthResult(JNIContext &jni_context,
-    jobject obj, jlong handle, jint result, jobject user) {
+void GoogleSignIn::GoogleSignInImpl::NativeOnAuthResult(
+    JNIEnv *env, jobject obj, jlong handle, jint result, jobject user) {
   GoogleSignInFuture *future = reinterpret_cast<GoogleSignInFuture *>(handle);
   if (future) {
     SignInResult *rc = new GoogleSignIn::SignInResult();
     rc->StatusCode = result;
-    rc->User = GoogleSignInUserImpl::UserFromAccount(jni_context, user);
+    rc->User = GoogleSignInUserImpl::UserFromAccount(user);
 
     if (rc->User) {
       __android_log_print(ANDROID_LOG_INFO, TAG, "User Display Name is  %s",
@@ -372,9 +362,8 @@ void GoogleSignIn::GoogleSignInImpl::NativeOnAuthResult(JNIContext &jni_context,
 
 // Public class implementation.  These are called by external callers to use the
 // Google Sign-in API.
-
-GoogleSignIn::GoogleSignIn(jobject activity, JavaVM *vm)
-    : impl_(new GoogleSignInImpl(activity, vm)) {}
+GoogleSignIn::GoogleSignIn(jobject activity)
+    : impl_(new GoogleSignInImpl(activity)) {}
 
 void GoogleSignIn::EnableDebugLogging(bool flag) {
   impl_->EnableDebugLogging(flag);
@@ -400,5 +389,4 @@ void GoogleSignIn::SignOut() { impl_->SignOut(); }
 
 void GoogleSignIn::Disconnect() { impl_->Disconnect(); }
 
-}  // namespace signin
-}  // namespace google
+}  // namespace googlesignin

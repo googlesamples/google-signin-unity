@@ -16,6 +16,8 @@ ProjectSettings/
 Temp/
 obj/
 
+.DS_Store
+
 # Don't check in the resolver
 GoogleSignInPlugin/Assets/PlayServicesResolver/
 

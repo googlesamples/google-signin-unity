@@ -20,6 +20,8 @@
 #endif
 
 #include <jni.h>
+#include <string>
+#include <vector>
 
 #include "future.h"              // NOLINT
 #include "google_signin_user.h"  // NOLINT
@@ -90,7 +92,7 @@ class GoogleSignIn {
     /// true to use games signin, false for default signin.
     bool use_game_signin;
     /// web client id associated with this app.
-    const char *web_client_id;
+    std::string web_client_id;
     /// true for getting an auth code when authenticating.
     /// Note: This may trigger re-consent on iOS.  Ideally, this
     /// is set to true once, and the result sent to the server where the
@@ -107,11 +109,11 @@ class GoogleSignIn {
     /// recommended for VR applications.
     bool hide_ui_popups;
     /// account name to use when authenticating, null indicates use default.
-    const char *account_name;
+    std::string account_name;
     /// additional scopes to request, requires consent.
-    const char **additional_scopes;
-    int additional_scope_count;
+    std::vector<std::string> additional_scopes;
 
+    Configuration() = default;
     ~Configuration() = default;
     Configuration(Configuration const &copy) = default;
     Configuration(Configuration &&move) = delete;
