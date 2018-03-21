@@ -1,32 +1,29 @@
-// Copyright (C) 2017 Google Inc. All Rights Reserved.
+// Copyright 2018 Google Inc. All rights reserved.
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//  http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//    limitations under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#ifndef GOOGLESIGNIN_GOOGLESIGNIN_H  // NOLINT
-#define GOOGLESIGNIN_GOOGLESIGNIN_H
-
-#if !defined(__ANDROID__)
-#error "This class is for Android only."
-#endif
-
-#include <jni.h>
-#include <string>
-#include <vector>
+#ifndef GOOGLE_SIGNIN_GOOGLESIGNIN_H  // NOLINT
+#define GOOGLE_SIGNIN_GOOGLESIGNIN_H
 
 #include "future.h"              // NOLINT
 #include "google_signin_user.h"  // NOLINT
 
-namespace googlesignin {
+#if defined(__ANDROID__)
+#include <jni.h>
+#endif
+
+namespace google {
+namespace signin {
 
 class GoogleSignIn {
  public:
@@ -37,16 +34,28 @@ class GoogleSignIn {
   /// and Android.
   /// </remarks>
   enum StatusCode {
+    /// <summary>The operation was successful, but used the device's cache.
+    /// </summary>
+    kStatusCodeSuccessCached = -1,
+
+    /// <summary>The operation was successful.</summary>
+    kStatusCodeSuccess = 0,
+
     /// <summary>The result is uninitialized.
     kStatusCodeUninitialized = 100,
 
-    /// <summary>The client attempted to call a method from an API that
-    /// failed to connect.</summary>
-    kStatusCodeApiNotConnected = 17,
 
-    /// <summary>The result was canceled either due to client disconnect
-    /// or cancel().</summary>
-    kStatusCodeCanceled = 16,
+    /// <summary> The client attempted to connect to the service with an
+    /// invalid account name specified. </summary>
+    kStatusCodeInvalidAccount = 5,
+
+    /// <summary>A network error occurred. Retrying should resolve the problem.
+    /// </summary>
+    kStatusCodeNetworkError = 7,
+
+    /// <summary>An internal error occurred. Retrying should resolve the
+    /// problem.</summary>
+    kStatusCodeInternalError = 8,
 
     /// <summary>The application is misconfigured.
     /// This error is not recoverable.</summary>
@@ -60,39 +69,29 @@ class GoogleSignIn {
     /// information.</summary>
     kStatusCodeError = 13,
 
-    /// <summary>An internal error occurred. Retrying should resolve the
-    /// problem.</summary>
-    kStatusCodeInternalError = 8,
-
     /// <summary> A blocking call was interrupted while waiting and did not
     /// run to completion.</summary>
     kStatusCodeInterrupted = 14,
 
-    /// <summary> The client attempted to connect to the service with an
-    /// invalid account name specified. </summary>
-    kStatusCodeInvalidAccount = 5,
-
-    /// <summary>A network error occurred. Retrying should resolve the problem.
-    /// </summary>
-    kStatusCodeNetworkError = 7,
-
-    /// <summary>The operation was successful.</summary>
-    kStatusCodeSuccess = 0,
-
-    /// <summary>The operation was successful, but was used the device's cache.
-    /// </summary>
-    kStatusCodeSuccessCached = -1,
-
     /// <summary>Timed out while awaiting the result.</summary>
     kStatusCodeTimeout = 15,
+
+    /// <summary>The result was canceled either due to client disconnect
+    /// or cancel().</summary>
+    kStatusCodeCanceled = 16,
+
+    /// <summary>The client attempted to call a method from an API that
+    /// failed to connect.</summary>
+    kStatusCodeApiNotConnected = 17,
   };
 
   // Defines the configuration for the sign-in process.
   struct Configuration {
     /// true to use games signin, false for default signin.
+    /// games signing only works on Android.
     bool use_game_signin;
-    /// web client id associated with this app.
-    std::string web_client_id;
+    /// Web client id associated with this app.
+    const char *web_client_id;
     /// true for getting an auth code when authenticating.
     /// Note: This may trigger re-consent on iOS.  Ideally, this
     /// is set to true once, and the result sent to the server where the
@@ -109,14 +108,15 @@ class GoogleSignIn {
     /// recommended for VR applications.
     bool hide_ui_popups;
     /// account name to use when authenticating, null indicates use default.
-    std::string account_name;
+    const char *account_name;
     /// additional scopes to request, requires consent.
-    std::vector<std::string> additional_scopes;
+    const char **additional_scopes;
+    int additional_scope_count;
 
-    Configuration() = default;
-    ~Configuration() = default;
     Configuration(Configuration const &copy) = default;
     Configuration(Configuration &&move) = delete;
+    ~Configuration() = default;
+
     Configuration &operator=(Configuration const &copy) = delete;
     Configuration &operator=(Configuration &&move) = delete;
   };
@@ -125,17 +125,22 @@ class GoogleSignIn {
   struct SignInResult {
     GoogleSignInUser *User;
     int StatusCode;
+
     SignInResult() = default;
-    ~SignInResult() = default;
     SignInResult(SignInResult const &copy) = default;
     SignInResult(SignInResult &&move) = delete;
+    ~SignInResult() = default;
+
     SignInResult &operator=(SignInResult const &copy) = delete;
     SignInResult &operator=(SignInResult &&move) = delete;
   };
 
-  // Constructs a new instance.  The activity parameter is needed to
-  // add a fragment to the activity which performs the sign-in operation.
-  GoogleSignIn(jobject activity);
+  // Constructs a new instance.
+#if defined(__ANDROID__)
+  GoogleSignIn(jobject activity, JavaVM *vm);
+#else
+  GoogleSignIn();
+#endif
 
   // Enables verbose logging.
   void EnableDebugLogging(bool flag);
@@ -164,6 +169,8 @@ class GoogleSignIn {
   class GoogleSignInImpl;
   GoogleSignInImpl *impl_;
 };
-}  // namespace googlesignin
+
+}  // namespace signin
+}  // namespace google
 
 #endif  // GOOGLESIGNIN_GOOGLESIGNIN_H  NOLINT
