@@ -15,6 +15,9 @@
 #ifndef GOOGLE_SIGNIN_GOOGLESIGNIN_H  // NOLINT
 #define GOOGLE_SIGNIN_GOOGLESIGNIN_H
 
+#include <string>
+#include <vector>
+
 #include "future.h"              // NOLINT
 #include "google_signin_user.h"  // NOLINT
 
@@ -91,7 +94,7 @@ class GoogleSignIn {
     /// games signing only works on Android.
     bool use_game_signin;
     /// Web client id associated with this app.
-    const char *web_client_id;
+    std::string web_client_id;
     /// true for getting an auth code when authenticating.
     /// Note: This may trigger re-consent on iOS.  Ideally, this
     /// is set to true once, and the result sent to the server where the
@@ -108,9 +111,9 @@ class GoogleSignIn {
     /// recommended for VR applications.
     bool hide_ui_popups;
     /// account name to use when authenticating, null indicates use default.
-    const char *account_name;
+    std::string account_name;
     /// additional scopes to request, requires consent.
-    const char **additional_scopes;
+    std::vector<std::string> additional_scopes;
     int additional_scope_count;
 
     Configuration(Configuration const &copy) = default;
