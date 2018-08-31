@@ -527,7 +527,11 @@ public class GoogleSignInFragment extends Fragment implements
       TokenRequest request = this.request;
       if (request != null) {
         GoogleSignInAccount acct = result.getSignInAccount();
-        request.setResult(result.getStatus().getStatusCode(), acct);
+        if (resultCode == Activity.RESULT_CANCELED) {
+          request.setResult(CommonStatusCodes.CANCELED, acct);
+        } else {
+          request.setResult(result.getStatus().getStatusCode(), acct);
+        }
       } else {
         GoogleSignInHelper.logError("Pending request is null, can't " + "return result!");
       }
