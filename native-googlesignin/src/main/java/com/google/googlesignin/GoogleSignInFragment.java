@@ -412,7 +412,7 @@ public class GoogleSignInFragment extends Fragment implements
       }
     }
     if (request.getHidePopups()) {
-      View invisible = new View(getContext());
+      View invisible = new View(getActivity());
       invisible.setVisibility(View.INVISIBLE);
       invisible.setClickable(false);
       clientBuilder.setViewForPopups(invisible);
@@ -456,7 +456,7 @@ public class GoogleSignInFragment extends Fragment implements
       setter.invoke(builder, false);
 
       Method buildMethod = builder.getClass().getMethod("build");
-      return (GoogleSignInOptionsExtension) builderMethod.invoke(builder);
+      return (GoogleSignInOptionsExtension) buildMethod.invoke(builder);
 
     } catch (ClassNotFoundException e) {
       throw new IllegalArgumentException(
@@ -526,8 +526,15 @@ public class GoogleSignInFragment extends Fragment implements
       GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
       TokenRequest request = this.request;
       if (request != null) {
-        GoogleSignInAccount acct = result.getSignInAccount();
-        request.setResult(result.getStatus().getStatusCode(), acct);
+        if (result == null) {
+          // This usually indicates a problem with Google Play Services not working correctly.
+          int returnCode = resultCode >= 0 ? CommonStatusCodes.ERROR : resultCode;
+          request.setResult( returnCode, null);
+          GoogleSignInHelper.logError("GoogleSignIn result is null, returning error.");
+        } else {
+          GoogleSignInAccount acct = result.getSignInAccount();
+          request.setResult(result.getStatus().getStatusCode(), acct);
+        }
       } else {
         GoogleSignInHelper.logError("Pending request is null, can't " + "return result!");
       }
