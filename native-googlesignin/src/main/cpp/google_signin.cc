@@ -295,7 +295,7 @@ Future<GoogleSignIn::SignInResult> &GoogleSignIn::GoogleSignInImpl::SignIn() {
     current_result_->SetResult(nullptr);
   }
 
-  CallConfigure();
+  //CallConfigure();
 
   env->CallStaticVoidMethod(helper_clazz_, signin_method_, activity_,
                             (jlong)current_result_);
@@ -311,7 +311,7 @@ Future<GoogleSignIn::SignInResult>
     current_result_->SetResult(nullptr);
   }
 
-  CallConfigure();
+  //CallConfigure();
 
   env->CallStaticVoidMethod(helper_clazz_, signinsilently_method_, activity_,
                             (jlong)current_result_);
