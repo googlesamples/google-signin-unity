@@ -58,7 +58,7 @@ Android client.  The package_name must be entered in the Unity player settings.
 3.  The keystore used to sign your application. This is configured in the publishing settings of the Android Player properties in
 the Unity editor.  This must be the same keystore used to generate
 the SHA1 fingerprint when creating the application on the console.  __NOTE:__
-The configutation file does not reference the keystore, you need to keep track of
+The configuration file does not reference the keystore, you need to keep track of
 this yourself.
 
 
