@@ -23,6 +23,10 @@ or as part of Firebase configuration.
 In order to access ID tokens or server auth codes, you also need to configure
 a web client ID.
 
+## Downloading the built plugin package
+
+Releases can be found at https://github.com/googlesamples/google-signin-unity/releases
+
 ## How to build the sample
 
 
