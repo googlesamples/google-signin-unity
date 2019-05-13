@@ -297,7 +297,8 @@ static size_t CopyNSString(NSString *src, char *dest, size_t len) {
     strncpy(dest, string, len);
     return len;
   }
-  return src ? src.length + 1 : 0;
+  const char *chars = [src UTF8String];
+  return src ? strlen(chars) + 1 : 0;
 }
 
 size_t GoogleSignIn_GetServerAuthCode(GIDGoogleUser *guser, char *buf,
