@@ -78,6 +78,10 @@ Import the `GoogleSignIn-sample.unitypackage` which contains the sample scene an
 scripts. This package is not needed if you are integrating Google Sign-in into
 your own application.
 
+Make sure you download the actual assets from: https://github.com/googlesamples/google-signin-unity/releases and DO NOT just clone
+the source files into your project. You will also need Unity Jar Resolver to download android dependencies, you can find it here:
+https://github.com/googlesamples/unity-jar-resolver/releases
+
 ### Configure the web client id
 
 1. Open the sample scene in `Assets/SignInSample/MainScene`.
