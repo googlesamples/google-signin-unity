@@ -15,12 +15,16 @@ Library/
 ProjectSettings/
 Temp/
 obj/
+Logs/
+Packages/
 
 # Don't check in the resolver
 GoogleSignInPlugin/Assets/PlayServicesResolver/
+PlayServicesResolver.meta
 
 # don't checkin client plists
 GoogleSignInPlugin/Assets/Plugins/iOS/client*.plist*
+GoogleService-Info.plist*
 
 Assembly-CSharp-Editor.csproj
 Assembly-CSharp.csproj
@@ -31,3 +35,6 @@ staging/native/google-signin-cpp
 # don't check in iOS pod generated content
 contents.xcworkspacedata
 staging/native/testapp/testapp.xcodeproj/project.xcworkspace/xcuserdata
+
+# osx
+.DS_Store

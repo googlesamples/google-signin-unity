@@ -105,9 +105,6 @@ NSRecursiveLock *resultLock = [NSRecursiveLock alloc];
       case kGIDSignInErrorCodeKeychain:
         currentResult_->result_code = kStatusCodeInternalError;
         break;
-      case kGIDSignInErrorCodeNoSignInHandlersInstalled:
-        currentResult_->result_code = kStatusCodeDeveloperError;
-        break;
       case kGIDSignInErrorCodeHasNoAuthInKeychain:
         currentResult_->result_code = kStatusCodeError;
         break;
@@ -239,7 +236,7 @@ void *GoogleSignIn_SignIn() {
 void *GoogleSignIn_SignInSilently() {
   SignInResult *result = startSignIn();
   if (!result) {
-    [[GIDSignIn sharedInstance] signInSilently];
+    [[GIDSignIn sharedInstance] signIn];
     result = currentResult_.get();
   }
   return result;
