@@ -105,9 +105,6 @@ NSRecursiveLock *resultLock = [NSRecursiveLock alloc];
       case kGIDSignInErrorCodeKeychain:
         currentResult_->result_code = kStatusCodeInternalError;
         break;
-      case kGIDSignInErrorCodeNoSignInHandlersInstalled:
-        currentResult_->result_code = kStatusCodeDeveloperError;
-        break;
       case kGIDSignInErrorCodeHasNoAuthInKeychain:
         currentResult_->result_code = kStatusCodeError;
         break;
@@ -232,6 +229,10 @@ void *GoogleSignIn_SignIn() {
   return result;
 }
 
+bool GoogleSignIn_CanBeSilent() {
+  return [GIDSignIn sharedInstance].hasPreviousSignIn;
+}
+
 /**
  * Attempt a silent sign-in. Return value is the pointer to the currentResult
  * object.
@@ -239,7 +240,7 @@ void *GoogleSignIn_SignIn() {
 void *GoogleSignIn_SignInSilently() {
   SignInResult *result = startSignIn();
   if (!result) {
-    [[GIDSignIn sharedInstance] signInSilently];
+    [[GIDSignIn sharedInstance] restorePreviousSignIn];
     result = currentResult_.get();
   }
   return result;

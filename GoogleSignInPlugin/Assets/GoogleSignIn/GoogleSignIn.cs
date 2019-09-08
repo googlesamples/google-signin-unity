@@ -121,6 +121,10 @@ namespace Google {
       return tcs.Task;
     }
 
+    public bool SignInCanBeSilent {
+      get { return impl.SignInCanBeSilent; }
+    }
+
     /// <summary>Starts the silent authentication process.</summary>
     /// <remarks>
     /// The authenication process is started and will attempt to sign in without
@@ -195,6 +199,7 @@ namespace Google {
   internal interface ISignInImpl {
     Future<GoogleSignInUser> SignIn();
     Future<GoogleSignInUser> SignInSilently();
+    bool SignInCanBeSilent { get; }    
     void EnableDebugLogging(bool flag);
     void SignOut();
     void Disconnect();
