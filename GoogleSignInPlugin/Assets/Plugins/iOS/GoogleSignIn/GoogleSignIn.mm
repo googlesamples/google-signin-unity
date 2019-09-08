@@ -229,6 +229,10 @@ void *GoogleSignIn_SignIn() {
   return result;
 }
 
+bool GoogleSignIn_CanBeSilent() {
+  return [GIDSignIn sharedInstance].hasPreviousSignIn;
+}
+
 /**
  * Attempt a silent sign-in. Return value is the pointer to the currentResult
  * object.
@@ -236,7 +240,7 @@ void *GoogleSignIn_SignIn() {
 void *GoogleSignIn_SignInSilently() {
   SignInResult *result = startSignIn();
   if (!result) {
-    [[GIDSignIn sharedInstance] signIn];
+    [[GIDSignIn sharedInstance] restorePreviousSignIn];
     result = currentResult_.get();
   }
   return result;

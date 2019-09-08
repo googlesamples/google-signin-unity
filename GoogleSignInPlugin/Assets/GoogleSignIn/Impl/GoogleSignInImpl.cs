@@ -66,6 +66,12 @@ namespace Google.Impl {
       return new Future<GoogleSignInUser>(new NativeFuture(nativeFuture));
     }
 
+    public bool SignInCanBeSilent {
+      get {
+        return GoogleSignIn_CanBeSilent(SelfPtr());
+      }
+    }
+
     /// <summary>
     /// Starts the authentication process.
     /// </summary>
@@ -132,6 +138,9 @@ namespace Google.Impl {
 
     [DllImport(DllName)]
     internal static extern bool GoogleSignIn_Pending(HandleRef self);
+
+    [DllImport(DllName)]
+    internal static extern bool GoogleSignIn_CanBeSilent(HandleRef self);
 
     [DllImport(DllName)]
     internal static extern IntPtr GoogleSignIn_Result(HandleRef self);
