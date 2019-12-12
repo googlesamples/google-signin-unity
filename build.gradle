@@ -257,7 +257,6 @@ task package_plugin () {
                 "-importPackage", jarresolver_package,
                 "-exportPackage",
                     "Assets/GoogleSignIn",
-                    "Assets/Parse",
                     "Assets/PlayServicesResolver",
                     "Assets/Plugins",
                 "${exportPath}",

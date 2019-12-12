@@ -21,6 +21,8 @@
 
 #import <memory>
 
+#import "UnityAppController.h"
+
 // These values are in the Unity plugin code.  The iOS specific
 // codes are mapped to these.
 static const int kStatusCodeSuccessCached = -1;
@@ -104,9 +106,6 @@ NSRecursiveLock *resultLock = [NSRecursiveLock alloc];
         break;
       case kGIDSignInErrorCodeKeychain:
         currentResult_->result_code = kStatusCodeInternalError;
-        break;
-      case kGIDSignInErrorCodeNoSignInHandlersInstalled:
-        currentResult_->result_code = kStatusCodeDeveloperError;
         break;
       case kGIDSignInErrorCodeHasNoAuthInKeychain:
         currentResult_->result_code = kStatusCodeError;
@@ -226,6 +225,7 @@ static SignInResult *startSignIn() {
 void *GoogleSignIn_SignIn() {
   SignInResult *result = startSignIn();
   if (!result) {
+    [GIDSignIn sharedInstance].presentingViewController = GetAppController().rootViewController;
     [[GIDSignIn sharedInstance] signIn];
     result = currentResult_.get();
   }
@@ -239,7 +239,8 @@ void *GoogleSignIn_SignIn() {
 void *GoogleSignIn_SignInSilently() {
   SignInResult *result = startSignIn();
   if (!result) {
-    [[GIDSignIn sharedInstance] signInSilently];
+    [GIDSignIn sharedInstance].presentingViewController = GetAppController().rootViewController;
+    [[GIDSignIn sharedInstance] signIn];
     result = currentResult_.get();
   }
   return result;
