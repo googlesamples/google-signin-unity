@@ -28,7 +28,7 @@ a web client ID.
 
 ### Get a Google Sign-In configuration file
 This file contains the client-side information needed to use Google Sign-in.
-The details on how to do this are documented on the [Developer website](https://developers.google.com/identity/sign-in/android/start-integrating#get-config).
+The details on how to do this are documented on the [Developer website](https://developers.google.com/identity/sign-in/android/start-integrating#configure_a_project).
 
 Once you have the configuration file, open it in a text editor.  In the middle
 of the file you should see the __oauth_client__ section:
