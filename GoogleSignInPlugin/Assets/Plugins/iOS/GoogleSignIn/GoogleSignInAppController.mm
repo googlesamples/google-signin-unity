@@ -75,7 +75,6 @@ GoogleSignInHandler *gsiHandler;
   // Setup the Sign-In instance.
   GIDSignIn *signIn = [GIDSignIn sharedInstance];
   signIn.clientID = clientId;
-  signIn.presentingViewController = gsiHandler;
   signIn.delegate = gsiHandler;
 
   // looks like it's just calling itself, but the implementations were swapped
