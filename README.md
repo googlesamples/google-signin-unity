@@ -60,7 +60,11 @@ the Unity editor.  This must be the same keystore used to generate
 the SHA1 fingerprint when creating the application on the console.  __NOTE:__
 The configutation file does not reference the keystore, you need to keep track of
 this yourself.
-
+### Check your project's OAuth settings
+Be advised that if your project is configured as 'Internal' only users of your organisation can log in using this plug-in.
+As error thrown on sign-in without proper access rights is not very helpful - check your project is set to 'Testing' or 'External' 
+under 'OAuth consent screen' in Google Cloud Console and you are using the right Web Client Id
+(you can also use Client Id from Firebase Console, if you are using Firebase). 
 
 ### Create a new project and import the plugin
 Create a new Unity project and import the `GoogleSignIn-1.0.0.unitypackage` (or the latest version).
