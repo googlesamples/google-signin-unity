@@ -1,0 +1,19 @@
+{
+    "name": "com.googlesamples.google-signin-unity",
+    "displayName": "google-signin-unity", 
+    "version": "1.0.4",               
+    "unity": "2021.1",
+    "description": "google-signin-unity",
+    "author": {
+        "name": "googlesamples",
+        "url": "https://github.com/googlesamples"
+    },
+
+    "keywords": [
+        "google-signin",
+        "google-signin-unity"
+    ],
+
+    "dependencies": {
+    }
+}
