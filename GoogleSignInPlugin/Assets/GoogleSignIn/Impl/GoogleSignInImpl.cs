@@ -16,16 +16,13 @@
 
 namespace Google.Impl {
   using System;
+  using System.Text;
   using System.Collections.Generic;
   using System.Runtime.InteropServices;
 
-  internal class GoogleSignInImpl : BaseObject, ISignInImpl {
+  using UnityEngine;
 
-#if UNITY_ANDROID
-    private const string DllName = "native-googlesignin";
-#else
-    private const string DllName = "__Internal";
-#endif
+  internal class GoogleSignInImpl : BaseObject, ISignInImpl {
 
     internal GoogleSignInImpl(GoogleSignInConfiguration configuration)
           : base(GoogleSignIn_Create(GetPlayerActivity())) {
@@ -93,6 +90,94 @@ namespace Google.Impl {
       GoogleSignIn_Disconnect(SelfPtr());
     }
 
+#if UNITY_ANDROID
+    static AndroidJavaClass GoogleSignInHelper = new AndroidJavaClass("com.google.googlesignin.GoogleSignInHelper");
+    static AndroidJavaClass GoogleSignInFragment = new AndroidJavaClass("com.google.googlesignin.GoogleSignInFragment");
+    
+    static AndroidJavaObject parentActivity;
+    static IntPtr GoogleSignIn_Create(IntPtr activity)
+    {
+      parentActivity = new AndroidJavaObject(activity);
+
+      return GoogleSignInFragment.CallStatic<AndroidJavaObject>("getInstance",parentActivity).GetRawObject();
+    }
+    
+    static bool GoogleSignIn_Configure(HandleRef googleSignInHelper,
+      bool useGameSignIn, string webClientId,
+      bool requestAuthCode, bool forceTokenRefresh, bool requestEmail,
+      bool requestIdToken, bool hidePopups, string[] additionalScopes,
+      int scopeCount, string accountName)
+    {
+      GoogleSignInHelper.CallStatic("configure",parentActivity,
+                          useGameSignIn,
+                          webClientId,
+                          requestAuthCode,
+                          forceTokenRefresh,
+                          requestEmail,
+                          requestIdToken,
+                          hidePopups,
+                          accountName,
+                          additionalScopes,
+                          new SignInListener());
+
+      return !useGameSignIn;
+    }
+
+    public class SignInListener : AndroidJavaProxy
+    {
+      public SignInListener() : base("com.google.googlesignin.IListener")
+      {
+
+      }
+      
+      public void OnResult(int result, AndroidJavaObject acct)
+      {
+
+      }
+    }
+
+    static void GoogleSignIn_EnableDebugLogging(HandleRef self, bool flag) => GoogleSignInHelper.CallStatic("enableDebugLogging",flag);
+
+    static IntPtr GoogleSignIn_SignIn(HandleRef self)
+    {
+      return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signIn",parentActivity).GetRawObject();
+    }
+
+    static IntPtr GoogleSignIn_SignInSilently(HandleRef self)
+    {
+      return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signInSilently",parentActivity).GetRawObject();
+    }
+
+    static void GoogleSignIn_Signout(HandleRef self) => GoogleSignInHelper.CallStatic("signOut",new AndroidJavaObject(self.Handle));
+
+    static void GoogleSignIn_Disconnect(HandleRef self) => GoogleSignInHelper.CallStatic("disconnect",new AndroidJavaObject(self.Handle));
+
+    internal static void GoogleSignIn_DisposeFuture(HandleRef self) => new AndroidJavaObject(self.Handle).Dispose();
+
+    internal static bool GoogleSignIn_Pending(HandleRef self) => new AndroidJavaObject(self.Handle).Call<bool>("isPending");
+
+    internal static IntPtr GoogleSignIn_Result(HandleRef self) => new AndroidJavaObject(self.Handle).Call<AndroidJavaObject>("getAccount").GetRawObject();
+
+    internal static int GoogleSignIn_Status(HandleRef self) => new AndroidJavaObject(self.Handle).Call<int>("getStatus");
+    
+    internal static string GoogleSignIn_GetServerAuthCode(HandleRef self) => new AndroidJavaObject(self.Handle).Call<string>("getServerAuthCode");
+
+    internal static string GoogleSignIn_GetDisplayName(HandleRef self) => new AndroidJavaObject(self.Handle).Call<string>("getDisplayName");
+
+    internal static string GoogleSignIn_GetEmail(HandleRef self) => new AndroidJavaObject(self.Handle).Call<string>("getEmail");
+
+    internal static string GoogleSignIn_GetFamilyName(HandleRef self) => new AndroidJavaObject(self.Handle).Call<string>("getFamilyName");
+
+    internal static string GoogleSignIn_GetGivenName(HandleRef self) => new AndroidJavaObject(self.Handle).Call<string>("getGivenName");
+
+    internal static string GoogleSignIn_GetIdToken(HandleRef self) => new AndroidJavaObject(self.Handle).Call<string>("getIdToken");
+
+    internal static string GoogleSignIn_GetImageUrl(HandleRef self) => new AndroidJavaObject(self.Handle).Call<AndroidJavaObject>("getPhotoUrl").Call<string>("toString");
+
+    internal static string GoogleSignIn_GetUserId(HandleRef self) => new AndroidJavaObject(self.Handle).Call<string>("getId");
+#else
+    private const string DllName = "__Internal";
+
     /// <summary>
     /// Creates an instance of the native Google Sign-In implementation.
     /// </summary>
@@ -144,41 +229,86 @@ namespace Google.Impl {
       HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
 
     [DllImport(DllName)]
-    internal static extern UIntPtr GoogleSignIn_GetDisplayName(HandleRef self,
-      [In, Out] byte[] bytes, UIntPtr len);
+    internal static extern UIntPtr GoogleSignIn_GetDisplayName(HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
 
     [DllImport(DllName)]
-    internal static extern UIntPtr GoogleSignIn_GetEmail(HandleRef self,
-      [In, Out] byte[] bytes, UIntPtr len);
+    internal static extern UIntPtr GoogleSignIn_GetEmail(HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
 
     [DllImport(DllName)]
-    internal static extern UIntPtr GoogleSignIn_GetFamilyName(HandleRef self,
-      [In, Out] byte[] bytes, UIntPtr len);
+    internal static extern UIntPtr GoogleSignIn_GetFamilyName(HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
 
     [DllImport(DllName)]
-    internal static extern UIntPtr GoogleSignIn_GetGivenName(HandleRef self,
-      [In, Out] byte[] bytes, UIntPtr len);
+    internal static extern UIntPtr GoogleSignIn_GetGivenName(HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
 
     [DllImport(DllName)]
-    internal static extern UIntPtr GoogleSignIn_GetIdToken(HandleRef self,
-      [In, Out] byte[] bytes, UIntPtr len);
+    internal static extern UIntPtr GoogleSignIn_GetIdToken(HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
 
     [DllImport(DllName)]
-    internal static extern UIntPtr GoogleSignIn_GetImageUrl(HandleRef self,
-      [In, Out] byte[] bytes, UIntPtr len);
+    internal static extern UIntPtr GoogleSignIn_GetImageUrl(HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
 
     [DllImport(DllName)]
-    internal static extern UIntPtr GoogleSignIn_GetUserId(HandleRef self,
-      [In, Out] byte[] bytes, UIntPtr len);
+    internal static extern UIntPtr GoogleSignIn_GetUserId(HandleRef self, [In, Out] byte[] bytes, UIntPtr len);
+      
+    internal static string GoogleSignIn_GetServerAuthCode(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetServerAuthCode(self, out_string, out_size));
+
+    internal static string GoogleSignIn_GetDisplayName(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetDisplayName(self, out_string, out_size));
+
+    internal static string GoogleSignIn_GetEmail(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetEmail(self, out_string, out_size));
+
+    internal static string GoogleSignIn_GetFamilyName(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetFamilyName(self, out_string, out_size));
+
+    internal static string GoogleSignIn_GetGivenName(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetGivenName(self, out_string, out_size));
+
+    internal static string GoogleSignIn_GetIdToken(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetIdToken(self, out_string, out_size));
+
+    internal static string GoogleSignIn_GetImageUrl(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetImageUrl(self, out_string, out_size));
+
+    internal static string GoogleSignIn_GetUserId(HandleRef self) =>
+          OutParamsToString((out_string, out_size) =>
+              GoogleSignInImpl.GoogleSignIn_GetUserId(self, out_string, out_size));
+    
+    internal delegate UIntPtr OutStringMethod([In, Out] byte[] out_bytes,UIntPtr out_size);
+
+    internal static String OutParamsToString(OutStringMethod outStringMethod) {
+      UIntPtr requiredSize = outStringMethod(null, UIntPtr.Zero);
+      if (requiredSize.Equals(UIntPtr.Zero)) {
+        return null;
+      }
+
+      string str = null;
+      try {
+        byte[] array = new byte[requiredSize.ToUInt32()];
+        outStringMethod(array, requiredSize);
+        str = Encoding.UTF8.GetString(array, 0,
+                (int)requiredSize.ToUInt32() - 1);
+      } catch (Exception e) {
+        Debug.LogError("Exception creating string from char array: " + e);
+        str = string.Empty;
+      }
+      return str;
+    }
+#endif
 
     // Gets the Unity player activity.
     // For iOS, this returns Zero.
     private static IntPtr GetPlayerActivity() {
 #if UNITY_ANDROID
-      UnityEngine.AndroidJavaClass jc = new UnityEngine.AndroidJavaClass(
-        "com.unity3d.player.UnityPlayer");
-      return jc.GetStatic<UnityEngine.AndroidJavaObject>("currentActivity")
-               .GetRawObject();
+      var jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+      return jc.GetStatic<AndroidJavaObject>("currentActivity").GetRawObject();
 #else
       return IntPtr.Zero;
 #endif

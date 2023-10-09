@@ -87,7 +87,9 @@ namespace Google {
     public static GoogleSignIn DefaultInstance {
       get {
         if (theInstance == null) {
-#if UNITY_ANDROID || UNITY_IOS
+#if UNITY_EDITOR || UNITY_STANDALONE
+          theInstance = new GoogleSignIn(new GoogleSignInImplEditor(Configuration));
+#elif UNITY_ANDROID || UNITY_IOS
           theInstance = new GoogleSignIn(new GoogleSignInImpl(Configuration));
 #else
           theInstance = new GoogleSignIn(null);
@@ -100,7 +102,7 @@ namespace Google {
       }
     }
 
-    internal GoogleSignIn(GoogleSignInImpl impl) {
+    internal GoogleSignIn(ISignInImpl impl) {
       this.impl = impl;
     }
 

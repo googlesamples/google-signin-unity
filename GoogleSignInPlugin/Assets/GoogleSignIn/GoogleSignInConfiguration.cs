@@ -30,6 +30,11 @@ namespace Google {
     /// See the README for more details.
     /// </remarks>
     public bool UseGameSignIn = false;
+#if UNITY_EDITOR || UNITY_STANDALONE
+    /// <summary>Client Secret for used in editor and desktop platform</summary>
+    /// <remarks>Required for requesting auth code or id token in editor</remarks>
+    public string ClientSecret = null;
+#endif
     /// <summary>Web client id associated with this app.</summary>
     /// <remarks>Required for requesting auth code or id token.</remarks>
     public string WebClientId = null;
