@@ -1,0 +1,22 @@
+{
+    "name": "com.google.signin",
+    "displayName": "Google Signin",
+    "version": "0.8.0",
+    "unity": "2021.3",
+    "description": "Google Signin for android, ios ,desktop",
+    "keywords": [
+        "google",
+        "signin"
+    ],
+    "dependencies": {
+		"com.google.external-dependency-manager": "1.2.177",
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+    },
+    "samples": [
+        {
+            "displayName": "SignIn Sample",
+            "description": "Simple SignIn Sample",
+            "path": "Samples~/SignInSample"
+        }
+    ]
+}
