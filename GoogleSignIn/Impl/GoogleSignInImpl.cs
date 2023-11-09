@@ -153,9 +153,9 @@ namespace Google.Impl {
       return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signInSilently",parentActivity).GetRawObject();
     }
 
-    static void GoogleSignIn_Signout(HandleRef self) => GoogleSignInHelper.CallStatic("signOut",self.ToAndroidJavaObject());
+    static void GoogleSignIn_Signout(HandleRef self) => GoogleSignInHelper.CallStatic("signOut",parentActivity);
 
-    static void GoogleSignIn_Disconnect(HandleRef self) => GoogleSignInHelper.CallStatic("disconnect",self.ToAndroidJavaObject());
+    static void GoogleSignIn_Disconnect(HandleRef self) => GoogleSignInHelper.CallStatic("disconnect",parentActivity);
 
     internal static void GoogleSignIn_DisposeFuture(HandleRef self) => self.ToAndroidJavaObject().Dispose();
 
