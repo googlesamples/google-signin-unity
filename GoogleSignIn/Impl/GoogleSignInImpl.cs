@@ -136,8 +136,12 @@ namespace Google.Impl {
       
       public void OnResult(int result, AndroidJavaObject acct)
       {
-        Debug.Log("googlesignin.IListener : " + acct.Call<string>("toString"));
-        Debug.Log("ID : " + acct.Call<string>("getId"));
+        if(acct != null)
+        {
+            Debug.Log("googlesignin.IListener : " + acct.Call<string>("toString"));
+            Debug.Log("ID : " + acct.Call<string>("getId"));
+        }
+        else Debug.LogError("Should not get null account");
       }
     }
 
