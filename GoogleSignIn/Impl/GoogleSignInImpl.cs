@@ -161,29 +161,29 @@ namespace Google.Impl {
 
     static void GoogleSignIn_Disconnect(HandleRef self) => GoogleSignInHelper.CallStatic("disconnect",parentActivity);
 
-    internal static void GoogleSignIn_DisposeFuture(HandleRef self) => self.ToAndroidJavaObject().Dispose();
+    internal static void GoogleSignIn_DisposeFuture(HandleRef self) => self.ToAndroidJavaObject()?.Dispose();
 
-    internal static bool GoogleSignIn_Pending(HandleRef self) => self.ToAndroidJavaObject().Call<bool>("isPending");
+    internal static bool GoogleSignIn_Pending(HandleRef self) => self.ToAndroidJavaObject()?.Call<bool>("isPending") ?? false;
 
-    internal static IntPtr GoogleSignIn_Result(HandleRef self) => self.ToAndroidJavaObject().Call<AndroidJavaObject>("getAccount").GetRawObject();
+    internal static IntPtr GoogleSignIn_Result(HandleRef self) => self.ToAndroidJavaObject()?.Call<AndroidJavaObject>("getAccount")?.GetRawObject() ?? IntPtr.Zero;
 
-    internal static int GoogleSignIn_Status(HandleRef self) => self.ToAndroidJavaObject().Call<int>("getStatus");
+    internal static int GoogleSignIn_Status(HandleRef self) => self.ToAndroidJavaObject()?.Call<int>("getStatus") ?? -1;
     
-    internal static string GoogleSignIn_GetServerAuthCode(HandleRef self) => self.ToAndroidJavaObject().Call<string>("getServerAuthCode");
+    internal static string GoogleSignIn_GetServerAuthCode(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getServerAuthCode");
 
-    internal static string GoogleSignIn_GetDisplayName(HandleRef self) => self.ToAndroidJavaObject().Call<string>("getDisplayName");
+    internal static string GoogleSignIn_GetDisplayName(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getDisplayName");
 
-    internal static string GoogleSignIn_GetEmail(HandleRef self) => self.ToAndroidJavaObject().Call<string>("getEmail");
+    internal static string GoogleSignIn_GetEmail(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getEmail");
 
-    internal static string GoogleSignIn_GetFamilyName(HandleRef self) => self.ToAndroidJavaObject().Call<string>("getFamilyName");
+    internal static string GoogleSignIn_GetFamilyName(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getFamilyName");
 
-    internal static string GoogleSignIn_GetGivenName(HandleRef self) => self.ToAndroidJavaObject().Call<string>("getGivenName");
+    internal static string GoogleSignIn_GetGivenName(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getGivenName");
 
-    internal static string GoogleSignIn_GetIdToken(HandleRef self) => self.ToAndroidJavaObject().Call<string>("getIdToken");
+    internal static string GoogleSignIn_GetIdToken(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getIdToken");
 
-    internal static string GoogleSignIn_GetImageUrl(HandleRef self) => self.ToAndroidJavaObject().Call<AndroidJavaObject>("getPhotoUrl").Call<string>("toString");
+    internal static string GoogleSignIn_GetImageUrl(HandleRef self) => self.ToAndroidJavaObject()?.Call<AndroidJavaObject>("getPhotoUrl")?.Call<string>("toString");
 
-    internal static string GoogleSignIn_GetUserId(HandleRef self) => self.ToAndroidJavaObject().Call<string>("getId");
+    internal static string GoogleSignIn_GetUserId(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getId");
 #else
     private const string DllName = "__Internal";
 
@@ -334,6 +334,9 @@ namespace Google.Impl {
     public static AndroidJavaObject ToAndroidJavaObject(in this HandleRef self) => self.Handle.ToAndroidJavaObject();
     public static AndroidJavaObject ToAndroidJavaObject(in this IntPtr intPtr)
     {
+      if(intPtr == IntPtr.Zero)
+        return null;
+
 #if UNITY_2022_2_OR_NEWER
       return new AndroidJavaObject(intPtr);
 #else

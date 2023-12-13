@@ -35,10 +35,12 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.common.api.Status;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Activity fragment with no UI added to the parent activity in order to manage the accessing of the
@@ -62,15 +64,19 @@ public class GoogleSignInFragment extends Fragment implements
     Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient).setResultCallback(new ResultCallback<GoogleSignInResult>() {
       @Override
       public void onResult(@NonNull GoogleSignInResult googleSignInResult) {
-        if (!googleSignInResult.isSuccess()) {
-          GoogleSignInHelper.logError(
-            "Error with " + "silentSignIn: " + googleSignInResult.getStatus());
+        if(googleSignInResult == null) {
+          GoogleSignInHelper.logError("Error with silentSignIn: googleSignInResult is null");
+          GoogleSignInHelper.nativeOnResult(request.getHandle(),CommonStatusCodes.INTERNAL_ERROR,null);
+          return;
         }
 
-        GoogleSignInHelper.nativeOnResult(
-          request.getHandle(),
-          googleSignInResult.getStatus().getStatusCode(),
-          googleSignInResult.getSignInAccount());
+        Status status = googleSignInResult.getStatus();
+        GoogleSignInAccount acct = googleSignInResult.isSuccess() ? googleSignInResult.getSignInAccount() : null;
+        if (acct == null) {
+          GoogleSignInHelper.logError("Error with silentSignIn: " + status);
+        }
+
+        GoogleSignInHelper.nativeOnResult(request.getHandle(),status != null ? status.getStatusCode() : CommonStatusCodes.INTERNAL_ERROR,acct);
         setState(State.READY);
       }
     });
@@ -153,7 +159,10 @@ public class GoogleSignInFragment extends Fragment implements
   private PendingResult<TokenResult> tokenPendingResult = null;
 
   public GoogleSignInAccount getAccount() {
-    return tokenPendingResult.await().getAccount();
+    if(tokenPendingResult == null || tokenPendingResult.isCanceled())
+      return null;
+
+    return tokenPendingResult.await(3,TimeUnit.SECONDS).getAccount();
   }
   
   public int getStatus() {
@@ -161,7 +170,11 @@ public class GoogleSignInFragment extends Fragment implements
       return CommonStatusCodes.DEVELOPER_ERROR;
     }
 
-    return tokenPendingResult.await().getStatus().getStatusCode();
+    if(tokenPendingResult.isCanceled()) {
+      return CommonStatusCodes.CANCELED;
+    }
+
+    return tokenPendingResult.await(3,TimeUnit.SECONDS).getStatus().getStatusCode();
   }
 
   private GoogleApiClient mGoogleApiClient;
@@ -287,34 +300,29 @@ public class GoogleSignInFragment extends Fragment implements
       }
 
       setState(State.BUSY);
-      request
-              .getPendingResponse()
-              .setResultCallback(
-                      new ResultCallback<TokenResult>() {
-                        @Override
-                        public void onResult(@NonNull TokenResult tokenResult) {
-                          GoogleSignInHelper.logDebug(
-                                  String.format(
-                                          Locale.getDefault(),
-                                          "Calling nativeOnResult: handle: %s, status: %d acct: %s",
-                                          tokenResult.getHandle(),
-                                          tokenResult.getStatus().getStatusCode(),
-                                          tokenResult.getAccount()));
-                          GoogleSignInHelper.nativeOnResult(
-                                  tokenResult.getHandle(),
-                                  tokenResult.getStatus().getStatusCode(),
-                                  tokenResult.getAccount());
-                          clearRequest(false);
-                        }
-                      });
+      request.getPendingResponse().setResultCallback(new ResultCallback<TokenResult>() {
+        @Override
+        public void onResult(@NonNull TokenResult tokenResult) {
+          GoogleSignInHelper.logDebug(
+                  String.format(
+                          Locale.getDefault(),
+                          "Calling nativeOnResult: handle: %s, status: %d acct: %s",
+                          tokenResult.getHandle(),
+                          tokenResult.getStatus().getStatusCode(),
+                          tokenResult.getAccount()));
+          GoogleSignInHelper.nativeOnResult(
+                  tokenResult.getHandle(),
+                  tokenResult.getStatus().getStatusCode(),
+                  tokenResult.getAccount());
+          clearRequest(false);
+        }
+      });
 
       // Build the GoogleAPIClient
       buildClient(request);
 
-      GoogleSignInHelper.logDebug(
-              " Has connected == " + mGoogleApiClient.hasConnectedApi(Auth.GOOGLE_SIGN_IN_API));
+      GoogleSignInHelper.logDebug(" Has connected == " + mGoogleApiClient.hasConnectedApi(Auth.GOOGLE_SIGN_IN_API));
       if (!mGoogleApiClient.hasConnectedApi(Auth.GOOGLE_SIGN_IN_API)) {
-
         DoSignIn(silent);
       }
     } catch (Throwable throwable) {
