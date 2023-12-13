@@ -167,7 +167,7 @@ namespace Google.Impl {
 
     internal static IntPtr GoogleSignIn_Result(HandleRef self) => self.ToAndroidJavaObject()?.Call<AndroidJavaObject>("getAccount")?.GetRawObject() ?? IntPtr.Zero;
 
-    internal static int GoogleSignIn_Status(HandleRef self) => self.ToAndroidJavaObject()?.Call<int>("getStatus") ?? -1;
+    internal static int GoogleSignIn_Status(HandleRef self) => self.ToAndroidJavaObject()?.Call<int>("getStatus") ?? 6;
     
     internal static string GoogleSignIn_GetServerAuthCode(HandleRef self) => self.ToAndroidJavaObject()?.Call<string>("getServerAuthCode");
 
@@ -337,15 +337,24 @@ namespace Google.Impl {
       if(intPtr == IntPtr.Zero)
         return null;
 
+      try
+      {
 #if UNITY_2022_2_OR_NEWER
-      return new AndroidJavaObject(intPtr);
+        return new AndroidJavaObject(intPtr);
 #else
-      if(constructorInfo == null)
-         constructorInfo = typeof(AndroidJavaObject).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,null,new[] { typeof(IntPtr) },null);
+        if(constructorInfo == null)
+          constructorInfo = typeof(AndroidJavaObject).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,null,new[] { typeof(IntPtr) },null);
 
-      Debug.Log(constructorInfo);
-      return constructorInfo.Invoke(new object[] { intPtr }) as AndroidJavaObject;
+        Debug.LogFormat("constructorInfo : {0}",constructorInfo);
+        return constructorInfo.Invoke(new object[] { intPtr }) as AndroidJavaObject;
 #endif
+      }
+      catch(Exception e)
+      {
+        Debug.LogException(e);
+      }
+
+      return null;
     }
   }
 }
