@@ -533,7 +533,11 @@ public class GoogleSignInFragment extends Fragment implements
           GoogleSignInHelper.logError("GoogleSignIn result is null, returning error.");
         } else {
           GoogleSignInAccount acct = result.getSignInAccount();
-          request.setResult(result.getStatus().getStatusCode(), acct);
+          if (resultCode == Activity.RESULT_CANCELED) {
+            request.setResult(CommonStatusCodes.CANCELED, acct);
+          } else {
+            request.setResult(result.getStatus().getStatusCode(), acct);
+          }
         }
       } else {
         GoogleSignInHelper.logError("Pending request is null, can't " + "return result!");
