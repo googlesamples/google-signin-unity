@@ -70,6 +70,8 @@ public class GoogleSignInFragment extends Fragment implements
           return;
         }
 
+        GoogleSignInFragment.this.tokenResult = new TokenResult(googleSignInResult.getSignInAccount(), googleSignInResult.getStatus().getStatusCode());
+
         Status status = googleSignInResult.getStatus();
         GoogleSignInAccount acct = googleSignInResult.isSuccess() ? googleSignInResult.getSignInAccount() : null;
         if (acct == null) {
@@ -77,6 +79,7 @@ public class GoogleSignInFragment extends Fragment implements
         }
 
         GoogleSignInHelper.nativeOnResult(request.getHandle(),status != null ? status.getStatusCode() : CommonStatusCodes.INTERNAL_ERROR,acct);
+        request.cancel();
         setState(State.READY);
       }
     });
@@ -122,6 +125,7 @@ public class GoogleSignInFragment extends Fragment implements
   }
 
   public void disconnect() {
+    this.tokenResult = null;
     this.tokenPendingResult = null;
     if (mGoogleApiClient != null) {
       mGoogleApiClient.disconnect();
@@ -156,9 +160,13 @@ public class GoogleSignInFragment extends Fragment implements
     return request;
   }
 
+  private TokenResult tokenResult = null;
   private PendingResult<TokenResult> tokenPendingResult = null;
 
   public GoogleSignInAccount getAccount() {
+    if (tokenResult != null)
+      return tokenResult.getAccount();
+
     if(tokenPendingResult == null || tokenPendingResult.isCanceled())
       return null;
 
@@ -166,6 +174,9 @@ public class GoogleSignInFragment extends Fragment implements
   }
   
   public int getStatus() {
+    if (tokenResult != null)
+      return tokenResult.getStatus().getStatusCode();
+
     if(tokenPendingResult == null) {
       return CommonStatusCodes.DEVELOPER_ERROR;
     }
@@ -207,6 +218,7 @@ public class GoogleSignInFragment extends Fragment implements
   public synchronized boolean submitRequest(TokenRequest request) {
     if (this.request == null || this.state == State.READY) {
       this.request = request;
+      this.tokenResult = null;
       this.tokenPendingResult = request.getPendingResponse();
       return true;
     }
@@ -230,6 +242,7 @@ public class GoogleSignInFragment extends Fragment implements
    */
   public void signOut() {
     clearRequest(true);
+    this.tokenResult = null;
     this.tokenPendingResult = null;
     if (mGoogleApiClient != null) {
       Auth.GoogleSignInApi.signOut(mGoogleApiClient);
@@ -303,6 +316,7 @@ public class GoogleSignInFragment extends Fragment implements
       request.getPendingResponse().setResultCallback(new ResultCallback<TokenResult>() {
         @Override
         public void onResult(@NonNull TokenResult tokenResult) {
+          GoogleSignInFragment.this.tokenResult = tokenResult;
           GoogleSignInHelper.logDebug(
                   String.format(
                           Locale.getDefault(),
@@ -314,7 +328,8 @@ public class GoogleSignInFragment extends Fragment implements
                   tokenResult.getHandle(),
                   tokenResult.getStatus().getStatusCode(),
                   tokenResult.getAccount());
-          clearRequest(false);
+          request.cancel();
+          setState(State.READY);
         }
       });
 
