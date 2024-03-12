@@ -71,7 +71,6 @@ namespace Google {
     /// <param name="tcs">Tcs.</param>
     internal IEnumerator WaitForResult(TaskCompletionSource<T> tcs) {
       yield return new WaitUntil(() => !Pending);
-      yield return null;
       if (Status == GoogleSignInStatusCode.CANCELED) {
         tcs.SetCanceled();
       } else if (Status == GoogleSignInStatusCode.SUCCESS ||
@@ -85,7 +84,6 @@ namespace Google {
     internal async Task WaitForResultAsync(TaskCompletionSource<T> tcs)
     {
       while (Pending) await Task.Yield();
-      await Task.Yield();
       if (Status == GoogleSignInStatusCode.CANCELED) {
         tcs.SetCanceled();
       } else if (Status == GoogleSignInStatusCode.SUCCESS ||
