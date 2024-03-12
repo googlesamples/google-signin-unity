@@ -55,14 +55,14 @@ namespace Google {
     /// Gets the status.
     /// </summary>
     /// <value>The status is set when Pending == false.</value>
-    GoogleSignInStatusCode Status { get { return apiImpl.Status; } }
+    public GoogleSignInStatusCode Status { get { return apiImpl.Status; } }
 
     /// <summary>
     /// Gets the result.
     /// </summary>
     /// <value>The result is set when Pending == false and there is no error.
     /// </value>
-    T Result { get { return apiImpl.Result; } }
+    public T Result { get { return apiImpl.Result; } }
 
     /// <summary>
     /// Waits for result then completes the TaskCompleationSource.
@@ -71,6 +71,21 @@ namespace Google {
     /// <param name="tcs">Tcs.</param>
     internal IEnumerator WaitForResult(TaskCompletionSource<T> tcs) {
       yield return new WaitUntil(() => !Pending);
+      yield return null;
+      if (Status == GoogleSignInStatusCode.CANCELED) {
+        tcs.SetCanceled();
+      } else if (Status == GoogleSignInStatusCode.SUCCESS ||
+            Status == GoogleSignInStatusCode.SUCCESS_CACHE) {
+        tcs.SetResult(Result);
+      } else {
+        tcs.SetException(new GoogleSignIn.SignInException(Status));
+      }
+    }
+
+    internal async Task WaitForResultAsync(TaskCompletionSource<T> tcs)
+    {
+      while (Pending) await Task.Yield();
+      await Task.Yield();
       if (Status == GoogleSignInStatusCode.CANCELED) {
         tcs.SetCanceled();
       } else if (Status == GoogleSignInStatusCode.SUCCESS ||

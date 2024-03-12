@@ -62,6 +62,8 @@ namespace Google.Impl
 #if UNITY_EDITOR_WIN
       var listeners = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners();
       return Enumerable.Range(minPort, ushort.MaxValue - minPort).Where((i) => !listeners.Any((x) => x.Port == i)).Select((port) => {
+#elif UNITY_EDITOR_OSX
+      return Enumerable.Range(minPort, ushort.MaxValue - minPort).Select((port) => {
 #else
       return Enumerable.Range(0,10).Select((i) => UnityEngine.Random.Range(minPort,ushort.MaxValue)).Select((port) => {
 #endif
