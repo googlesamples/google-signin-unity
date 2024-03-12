@@ -2,7 +2,7 @@
     "name": "com.google.signin",
     "displayName": "Google Signin",
     "author": "Robert Lehmann",
-    "version": "0.8.1",
+    "version": "0.8.2",
     "unity": "2021.3",
     "description": "Google Signin for android, ios ,desktop",
     "keywords": [
