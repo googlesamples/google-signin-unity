@@ -22,6 +22,7 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.Locale;
 
 /**
  * Pending result class for TokenResult. This allows the pending result to be returned to the
@@ -40,6 +41,12 @@ public class TokenPendingResult extends PendingResult<TokenResult> {
     this.requestHandle = requestHandle;
     result = new TokenResult();
     result.setHandle(requestHandle);
+  }
+    
+  @Override
+  public String toString() {
+    return String.format(
+        Locale.getDefault(), "Pending Result: %s", (result == null) ? "<null>" : result);
   }
 
   @Override

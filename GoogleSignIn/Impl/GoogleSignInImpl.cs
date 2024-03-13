@@ -1,4 +1,5 @@
-﻿// <copyright file="GoogleSignInImpl.cs" company="Google Inc.">
+#if UNITY_EDITOR || UNITY_ANDROID || UNITY_IOS
+// <copyright file="GoogleSignInImpl.cs" company="Google Inc.">
 // Copyright (C) 2017 Google Inc. All Rights Reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -141,7 +142,7 @@ namespace Google.Impl {
             Debug.Log("googlesignin.IListener : " + acct.Call<string>("toString"));
             Debug.Log("ID : " + acct.Call<string>("getId"));
         }
-        else Debug.LogError("Should not get null account");
+        else Debug.LogWarning("Should not get null account");
       }
     }
 
@@ -334,11 +335,10 @@ namespace Google.Impl {
     public static AndroidJavaObject ToAndroidJavaObject(in this HandleRef self) => self.Handle.ToAndroidJavaObject();
     public static AndroidJavaObject ToAndroidJavaObject(in this IntPtr intPtr)
     {
-      if(intPtr == IntPtr.Zero)
+      if (intPtr == IntPtr.Zero)
         return null;
 
-      try
-      {
+      try {
 #if UNITY_2022_2_OR_NEWER
         return new AndroidJavaObject(intPtr);
 #else
@@ -348,13 +348,11 @@ namespace Google.Impl {
         Debug.LogFormat("constructorInfo : {0}",constructorInfo);
         return constructorInfo.Invoke(new object[] { intPtr }) as AndroidJavaObject;
 #endif
+      } catch (Exception e) {
+        Debug.LogError("Exception creating AndroidJavaObject: " + e);
+        return null;
       }
-      catch(Exception e)
-      {
-        Debug.LogException(e);
-      }
-
-      return null;
     }
   }
 }
+#endif

@@ -1,7 +1,7 @@
 {
     "name": "com.google.signin",
     "displayName": "Google Signin",
-    "version": "0.8.0",
+    "version": "0.8.3",
     "unity": "2021.3",
     "description": "Google Signin for android, ios ,desktop",
     "keywords": [
