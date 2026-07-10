@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<dependencies>
+  <!-- See https://github.com/googlesamples/unity-jar-resolver#usage for
+    how to configure dependencies -->
+  <androidPackages>
+    <androidPackage spec="androidx.credentials:credentials:1.3.0" />
+    <androidPackage spec="androidx.credentials:credentials-play-services-auth:1.3.0" />
+    <androidPackage spec="com.google.android.libraries.identity.googleid:googleid:1.1.1" />
+    <androidPackage spec="com.google.android.gms:play-services-auth:21.3.0" />
+  </androidPackages>
+
+  <!-- iOS Cocoapod dependencies can be specified by each iosPod element. -->
+  <iosPods>
+    <iosPod name="GoogleSignIn" version="~> 9.0.0" bitcodeEnabled="false" />
+  </iosPods>
+
+  <!-- Swift Package Manager dependency, used instead of the iosPod above
+    on EDM4U 1.2.187+ (replacesPod prevents double inclusion). -->
+  <remoteSwiftPackage url="https://github.com/google/GoogleSignIn-iOS"
+                      version="9.0.0"
+                      upToNextMajor="true">
+    <swiftPackage name="GoogleSignIn" replacesPod="GoogleSignIn"/>
+  </remoteSwiftPackage>
+</dependencies>

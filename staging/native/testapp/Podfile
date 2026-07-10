@@ -1,7 +1,0 @@
-use_frameworks!
-platform :ios, '8.0'
-
-target 'testapp' do
-  pod 'GoogleSignInCpp', :path => '../'
-
-end
