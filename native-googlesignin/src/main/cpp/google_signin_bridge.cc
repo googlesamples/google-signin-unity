@@ -32,7 +32,7 @@ struct GoogleSignInHolder {
 
   ~GoogleSignInHolder() = default;
 
-  GoogleSignInHolder(GoogleSignInHolder const &copy) = default;
+  GoogleSignInHolder(GoogleSignInHolder const &copy) = delete;
 
   GoogleSignInHolder(GoogleSignInHolder &&move) = delete;
 
@@ -55,7 +55,7 @@ struct GoogleSignInFuture {
 
   ~GoogleSignInFuture() = default;
 
-  GoogleSignInFuture(GoogleSignInFuture const &copy) = default;
+  GoogleSignInFuture(GoogleSignInFuture const &copy) = delete;
 
   GoogleSignInFuture(GoogleSignInFuture &&move) = delete;
 

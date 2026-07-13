@@ -1,160 +1,148 @@
 # Google Sign-In Unity Plugin
-_Copyright (c) 2017 Google Inc. All rights reserved._
 
+Community-maintained Google Sign-In plugin for Unity on Android and iOS. The
+public C# API supports Google account profile data, OAuth ID tokens, server auth
+codes, additional scopes, and Play Games sign-in.
 
-## Overview
+Version 2.0.0 modernizes the original plugin's build system and platform SDKs
+while retaining the existing Unity-facing API.
 
-Google Sign-In API plugin for Unity game engine.  Works with Android and iOS.
-This plugin exposes the Google Sign-In API within Unity.  This is specifically
-intended to be used by Unity projects that require OAuth ID tokens or server
-auth codes.
+## Requirements
 
-It is cross-platform, supporting both Android and iOS.
+- Unity 2021.3 LTS or newer. Packaging is verified with Unity 2021.3.14f1.
+- Android 6.0 (API level 23) or newer.
+- iOS 12.0 or newer.
+- External Dependency Manager for Unity (EDM4U), included in the plugin package.
 
-See [Google Sign-In for Android](https://developers.google.com/identity/sign-in/android/start)
-for more information.
+The Android library is built with compile/target SDK 35 and uses Google Play
+services Auth 21.6.0, AndroidX Credentials 1.6.0, and Google ID 1.2.0. The iOS
+integration uses GoogleSignIn 9.1.0.
 
-## Configuring the application  on the API Console
+## Android Sign-In Behavior
 
-To authenticate you need to create credentials on the API console for your
-application. The steps to do this are available on
-[Google Sign-In for Android](https://developers.google.com/identity/sign-in/android/start)
-or as part of Firebase configuration.
-In order to access ID tokens or server auth codes, you also need to configure
-a web client ID.
+Android 2.0.0 uses Credential Manager for the common Google ID token flow when
+all of the following are true:
 
-## How to build the sample
+- `RequestIdToken` and `RequestEmail` are enabled.
+- `WebClientId` is set.
+- Games sign-in, server auth codes, forced refresh, popup suppression, account
+  hints, and additional scopes are not requested.
 
+Requests with advanced options continue through the Google Play services
+Google Sign-In compatibility flow. A non-cancellation Credential Manager error
+also falls back to that flow. This keeps existing auth-code, Games, and custom
+scope configurations working while simple ID-token sign-in uses the modern API.
 
-### Get a Google Sign-In configuration file
-This file contains the client-side information needed to use Google Sign-in.
-The details on how to do this are documented on the [Developer website](https://developers.google.com/identity/sign-in/android/start-integrating#get-config).
+`SignOut()` clears local sign-in and credential state. `Disconnect()` also
+attempts to revoke the account authorization granted to the application.
 
-Once you have the configuration file, open it in a text editor.  In the middle
-of the file you should see the __oauth_client__ section:
-```
-      "oauth_client": [
-        {
-          "client_id": "411000067631-hmh4e210xxxxxxxxxx373t3icpju8ooi.apps.googleusercontent.com",
-          "client_type": 3
-        },
-        {
-          "client_id": "411000067631-udra361txxxxxxxxxx561o9u9hc0java.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.your.package.name.",
-            "certificate_hash": "7ada045cccccccccc677a38c91474628d6c55d03"
-          }
-        }
-      ]
-```
+## Configure OAuth Clients
 
-There are 3 values you need for configuring your Unity project:
-1. The __Web client ID__.  This is needed for generating a server auth code for
-your backend server, or for generating an ID token.  This is the `client_id`
-value for the oauth client with client_type == 3.
-2. The __package_name__.  The client entry with client_type == 1 is the
-Android client.  The package_name must be entered in the Unity player settings.
-3.  The keystore used to sign your application. This is configured in the publishing settings of the Android Player properties in
-the Unity editor.  This must be the same keystore used to generate
-the SHA1 fingerprint when creating the application on the console.  __NOTE:__
-The configutation file does not reference the keystore, you need to keep track of
-this yourself.
+Create OAuth clients for your application in the
+[Google Cloud console](https://console.cloud.google.com/apis/credentials) or
+through Firebase:
 
+1. Create a Web application client. Its client ID is the `WebClientId` used for
+   ID tokens and server auth codes.
+2. Create an Android client with the Unity package name and the SHA-1 fingerprint
+   of the keystore that signs the application.
+3. For iOS, create an iOS client for the bundle ID and download
+   `GoogleService-Info.plist`.
 
-### Create a new project and import the plugin
-Create a new Unity project and import the `GoogleSignIn-1.0.0.unitypackage` (or the latest version).
-This contains native code, C# Unity code needed to call the Google Sign-In API for both Android and iOS.
+The Android package name and signing certificate must match the Android OAuth
+client. Debug and release keystores normally require separate registered SHA-1
+fingerprints.
 
-### Import the sample scene
-Import the `GoogleSignIn-sample.unitypackage` which contains the sample scene and
-scripts.  This package is not needed if you are integrating Google Sign-in into
-your own application.
+## Import Into Unity
 
-### Configure the web client id
-1. Open the sample scene in `Assets/SignInSample/MainScene`.
-2. Select the Canvas object in the hierarchy and enter the web client id
-in the __SignInSampleScript__ component.
+1. Import `google-signin-plugin-2.0.0.unitypackage`.
+2. Optionally import `GoogleSignIn-sample.unitypackage` after the plugin. The
+   sample package contains only the sample scene and scripts.
+3. Open **Assets > External Dependency Manager > Android Resolver > Force
+   Resolve** before building Android.
 
-## Building for Android
-1. Under Build Settings, select Android as the target platform.
-2. Set the package name in the player settings to the package_name you found in
-the configuration file.
-3. Select the keystore file, the key alias, and passwords.
-4. Resolve the Google Play Services SDK dependencies by selecting from the menu:
-    __Assets/Play Services Resolver/Android Resolver/Resolve__.  This will add
-    the required .aar files to your project in `Assets/Plugins/Android`.
+For the sample, open `Assets/SignInSample/MainScene`, select the Canvas, and set
+the Web client ID on the `SigninSampleScript` component.
 
-## Building for iOS
-For iOS, follow the instructions for creating a GoogleService-Info.plist file on
-https://developers.google.com/identity/sign-in/ios/start-integrating.
+## Build For Android
 
-In Unity, after switching to the iOS player, make sure to run the Play Services
-Resolver.  This will add the required frameworks and libraries to the XCode
-project via CocoPods.
+1. Switch the Unity build target to Android.
+2. Set **Player Settings > Other Settings > Minimum API Level** to Android 6.0
+   (API level 23) or newer.
+3. Set the package name to the value registered for the Android OAuth client.
+4. Configure the matching keystore, key alias, and passwords.
+5. Run EDM4U **Force Resolve**, then build the application.
 
-After generating the XCode project from Unity, download the GoogleService-Info.plist file
-from the Google Developers website and add it to your XCode project.
+To use the Play Games profile, uncomment the `play-services-games` dependency in
+`Assets/GoogleSignIn/Editor/GoogleSignInDependencies.xml` and resolve Android
+dependencies again.
 
-## Using the Games Profile to sign in on Android
-To use the Play Games Services Gamer profile when signing in, you need to edit the
-dependencies in `Assets/GoogleSignIn/Editor/GoogleSignInDependencies.xml`.
+## Build For iOS
 
-Uncomment the play-services-games dependency and re-run the resolution.
+Follow the [Google Sign-In for iOS integration guide](https://developers.google.com/identity/sign-in/ios/start-integrating)
+to configure the iOS OAuth client and URL scheme.
 
+1. Set the iOS deployment target to 12.0 or newer.
+2. Add `GoogleService-Info.plist` to the Unity project.
+3. Switch to the iOS build target and run the EDM4U iOS Resolver.
+4. Export the Xcode project and build the generated `.xcworkspace` so the
+   CocoaPods dependencies are included.
 
-## Using this plugin with Firebase Auth
-Follow the instructions to use Firebase Auth with Credentials on the [Firebase developer website]( https://firebase.google.com/docs/unity/setup).
+## Basic Usage
 
-Make sure to copy the google-services.json and/or GoogleService-Info.plist to your Unity project.
+```csharp
+GoogleSignIn.Configuration = new GoogleSignInConfiguration {
+  WebClientId = "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+  RequestEmail = true,
+  RequestIdToken = true
+};
 
-Then to use Google SignIn with Firebase Auth, you need to request an ID token when authenticating.
-The steps are:
-1. Configure Google SignIn to request an id token and set the web client id as described above.
-2. Call __SignIn()__ (or __SignInSilently()__).
-3. When handling the response, use the ID token to create a Firebase Credential.
-4. Call Firebase Auth method  __SignInWithCredential()__.
-
-```
-    GoogleSignIn.Configuration = new GoogleSignInConfiguration {
-      RequestIdToken = true,
-      // Copy this value from the google-service.json file.
-      // oauth_client with type == 3
-      WebClientId = "1072123000000-iacvb7489h55760s3o2nf1xxxxxxxx.apps.googleusercontent.com"
-    };
-
-    Task<GoogleSignInUser> signIn = GoogleSignIn.DefaultInstance.SignIn ();
-
-    TaskCompletionSource<FirebaseUser> signInCompleted = new TaskCompletionSource<FirebaseUser> ();
-    signIn.ContinueWith (task => {
-      if (task.IsCanceled) {
-        signInCompleted.SetCanceled ();
-      } else if (task.IsFaulted) {
-        signInCompleted.SetException (task.Exception);
-      } else {
-
-        Credential credential = Firebase.Auth.GoogleAuthProvider.GetCredential (((Task<GoogleSignInUser>)task).Result.IdToken, null);
-        auth.SignInWithCredentialAsync (credential).ContinueWith (authTask => {
-          if (authTask.IsCanceled) {
-            signInCompleted.SetCanceled();
-          } else if (authTask.IsFaulted) {
-            signInCompleted.SetException(authTask.Exception);
-          } else {
-            signInCompleted.SetResult(((Task<FirebaseUser>)authTask).Result);
-          }
-        });
-      }
-    });
+GoogleSignIn.DefaultInstance.SignIn().ContinueWith(task => {
+  if (!task.IsCanceled && !task.IsFaulted) {
+    GoogleSignInUser user = task.Result;
+    string idToken = user.IdToken;
+  }
+});
 ```
 
+For Firebase Authentication, pass the returned ID token to
+`GoogleAuthProvider.GetCredential(idToken, null)`, then sign in with the resulting
+Firebase credential.
 
-## Building the Plugin
-To build the plugin run `./gradlew -PlintAbortOnError build_all`. This builds the support aar
-library with lint warnings as errors and packages the plugin into a .unitypackage file.  It
-also packages the sample scene and script in a separate package.
+## Build The Plugin
 
-There's also a shortcut for linux/mac: `./build_all`.
+The repository build uses AGP 8.13.2 and Gradle 8.13. Install these prerequisites:
 
+- JDK 17
+- Android SDK Platform 35
+- Android NDK 29.0.14206865
+- CMake 3.22.1 or newer
+- Unity, plus Git and network access for fetching EDM4U and Maven dependencies
 
-## Questions? Problems?
-Post questions to this [Github project](https://github.com/googlesamples/google-signin-unity).
+On Windows PowerShell:
+
+```powershell
+$env:JAVA_HOME = 'C:\Tools\JDK\open-jdk-17.0.2'
+$env:ANDROID_HOME = 'C:\Tools\Android\Sdk'
+$env:UNITY_EXE = 'C:\Program Files\Unity\2021.3.14f1\Editor\Unity.exe'
+.\gradlew.bat -PlintAbortOnError :native-googlesignin:lintRelease build_all
+```
+
+On Linux or macOS, set `JAVA_HOME`, `ANDROID_HOME`, and `UNITY_EXE`, then run:
+
+```bash
+./gradlew -PlintAbortOnError :native-googlesignin:lintRelease build_all
+```
+
+The build writes these packages to the repository root:
+
+- `google-signin-plugin-2.0.0.unitypackage`
+- `GoogleSignIn-sample.unitypackage`
+
+The Android native library is linked for 16 KB page-size compatibility on all
+packaged ABIs.
+
+## License
+
+Copyright 2017 Google Inc. and subsequent contributors. Licensed under the
+[Apache License 2.0](LICENSE).

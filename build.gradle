@@ -20,10 +20,10 @@ import groovy.io.FileType
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.4'
+        classpath 'com.android.tools.build:gradle:8.13.2'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -33,7 +33,7 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
@@ -68,7 +68,7 @@ project.ext {
         git_exe = 'git'
     }
 
-    pluginVersion = "1.0.4"
+    pluginVersion = "2.0.0"
     currentPluginBasename = 'google-signin-plugin'
     currentPluginName = (currentPluginBasename + '-' + pluginVersion +
                                      '.unitypackage')
@@ -78,8 +78,14 @@ project.ext {
     samplePath = file('GoogleSignIn-sample.unitypackage').absolutePath
     pluginSrcPath = file('GoogleSignInPlugin').absolutePath
     pluginProjectPath = file('build/GoogleSignInPlugin').absolutePath
+    pluginExportPaths = [
+        "Assets/GoogleSignIn",
+        "Assets/ExternalDependencyManager",
+        "Assets/PlayServicesResolver",
+        "Assets/Plugins"
+    ]
 
-    resolverDir = new File('build/jarresolver').absolutePath
+    resolverDir = file('build/jarresolver').absolutePath
     jarresolver_uri = System.getProperty("RESOLVER_PACKAGE_URI")
     jarresolver_repos = [
       'https://github.com/googlesamples/unity-jar-resolver.git'
@@ -95,13 +101,34 @@ task clean(type: Delete) {
 }
 
 task copy_unity_project() {
-    dependsOn ':native-googlesignin:uploadArchives'
     doFirst {
+        delete pluginProjectPath
         copy {
             from pluginSrcPath
             into pluginProjectPath
+            exclude "Assets/Parse/**"
+            exclude "Assets/Parse.meta"
         }
+        mkdir("${pluginProjectPath}/Packages")
+        file("${pluginProjectPath}/Packages/manifest.json").text =
+'''{
+  "dependencies": {
+    "com.unity.ugui": "1.0.0",
+    "com.unity.modules.androidjni": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0"
+  }
+}
+'''
     }
+}
+
+project(':native-googlesignin').tasks.matching {
+    it.name == 'uploadArchives'
+}.configureEach {
+    mustRunAfter rootProject.tasks.named('copy_unity_project')
 }
 
 task copy_jarresolver() {
@@ -146,15 +173,34 @@ task copy_jarresolver() {
     }
 }
 
+def jarResolverPackageFile = {
+    def directPackage = file("${resolverDir}/resolver.unitypackage")
+    if (directPackage.exists()) {
+        return directPackage
+    }
+
+    def latestPackage =
+            file("${resolverDir}/external-dependency-manager-latest.unitypackage")
+    if (latestPackage.exists()) {
+        return latestPackage
+    }
+
+    def packages = fileTree(resolverDir) {
+        include "external-dependency-manager-*.unitypackage"
+        exclude "**/test_data/**"
+    }.files.sort { it.name }
+    if (packages.isEmpty()) {
+        throw new GradleException("No jar resolver unitypackage found in ${resolverDir}")
+    }
+    return packages.last()
+}
+
 task import_jarresolver() {
     description = "Imports the jar resolver into the project"
     dependsOn copy_unity_project, copy_jarresolver
 
     doLast {
-        def tree = fileTree(resolverDir) {
-            include "*.unitypackage"
-        }
-        def jarresolver_package = tree.getSingleFile()
+        def jarresolver_package = jarResolverPackageFile()
         def argv = [
                 "-gvh_disable",
                 "-g.building",
@@ -184,7 +230,7 @@ task import_jarresolver() {
 
 task generate_dependency_xml() {
   description "Generate the JarResolver dependency file for the support library"
-  dependsOn copy_unity_project
+  dependsOn copy_unity_project, ':native-googlesignin:uploadArchives'
   doFirst {
     def xmlFile = file("${pluginProjectPath}/${editorDir}/GoogleSignInSupportDependencies.xml")
 
@@ -207,12 +253,20 @@ task generate_manifest(dependsOn: [ 'inject_versionIntoMetaFiles']) {
   description 'Generate a manifest for the files in the plug-in.'
   doLast {
     def dir = file("${pluginProjectPath}/Assets")
+    def pluginRootPath = file(pluginProjectPath).toPath().toAbsolutePath().normalize()
+    def exportedRootPaths = pluginExportPaths.collect {
+      file("${pluginProjectPath}/${it}").toPath().toAbsolutePath().normalize()
+    }
     def list = []
     dir.eachFileRecurse(groovy.io.FileType.FILES) { filename ->
-      def path = filename.path
-      if (!(path.toLowerCase().endsWith('.meta') ||
-            path.toLowerCase().endsWith('.txt'))) {
-        list << filename.path.replace("${pluginProjectPath}/", '')
+      def path = filename.toPath().toAbsolutePath().normalize()
+      def relativePath = pluginRootPath.relativize(path).toString().replace(File.separatorChar, '/' as char)
+      def lowerPath = relativePath.toLowerCase()
+      if (exportedRootPaths.any { path.startsWith(it) } &&
+          !(lowerPath.endsWith('.meta') ||
+            lowerPath.startsWith("${editorDir.toLowerCase()}/${currentPluginBasename}_v") &&
+            lowerPath.endsWith('.txt'))) {
+        list << relativePath
       }
     }
   def manifest = file("${pluginProjectPath}/${editorDir}/" +
@@ -241,10 +295,7 @@ task package_plugin () {
     dependsOn generate_manifest, copy_manifestMetadata
 
     doLast {
-        def tree = fileTree(resolverDir) {
-            include "*.unitypackage"
-        }
-        def jarresolver_package = tree.getSingleFile()
+        def jarresolver_package = jarResolverPackageFile()
         def argv = [
                 "-gvh_disable",
                 "-g.building",
@@ -255,14 +306,9 @@ task package_plugin () {
                 "-projectPath", pluginProjectPath,
                 "-logFile", "build/unity.log",
                 "-importPackage", jarresolver_package,
-                "-exportPackage",
-                    "Assets/GoogleSignIn",
-                    "Assets/Parse",
-                    "Assets/PlayServicesResolver",
-                    "Assets/Plugins",
+                "-exportPackage"] + pluginExportPaths + [
                 "${exportPath}",
-                "-quit"
-        ]
+                "-quit"]
 
         ext.execResult = exec {
             executable "${unity_exe}"

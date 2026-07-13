@@ -34,6 +34,7 @@ namespace SignInSample {
     void Awake() {
       configuration = new GoogleSignInConfiguration {
             WebClientId = webClientId,
+            RequestEmail = true,
             RequestIdToken = true
       };
     }

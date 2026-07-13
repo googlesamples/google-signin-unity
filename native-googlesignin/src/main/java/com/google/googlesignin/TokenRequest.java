@@ -15,7 +15,6 @@
  */
 package com.google.googlesignin;
 
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.PendingResult;
 import java.util.Locale;
 
@@ -89,12 +88,12 @@ public class TokenRequest {
   }
 
   /**
-   * Sets the result of the reuquest.
+   * Sets the result of the request.
    *
    * @param code - the status code of the request.
-   * @param account - the GoogleSignInAccount if successful.
+   * @param account - the GoogleSignInUserData if successful.
    */
-  public void setResult(int code, GoogleSignInAccount account) {
+  public void setResult(int code, GoogleSignInUserData account) {
     pendingResponse.setResult(account, code);
     pendingResponse.setStatus(code);
   }
@@ -135,6 +134,18 @@ public class TokenRequest {
       }
     }
     return true;
+  }
+
+  public boolean canUseCredentialManager() {
+    return !useGamesConfig
+        && !doAuthCode
+        && doEmail
+        && doIdToken
+        && !forceRefresh
+        && !hidePopups
+        && getWebClientId().length() > 0
+        && accountName == null
+        && (scopes == null || scopes.length == 0);
   }
 
   public long getHandle() {

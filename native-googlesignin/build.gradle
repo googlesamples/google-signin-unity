@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
-group "com.google.signin"
+group = "com.google.signin"
 
 if (project.hasProperty("pluginVersion")) {
   project.version = project.pluginVersion
 } else {
-  project.version '0-SNAPSHOT'
+  project.version = '0-SNAPSHOT'
 }
 
 if (project.hasProperty("uploadDir")) {
@@ -32,25 +32,29 @@ if (project.hasProperty("uploadDir")) {
 project.ext.baseName = "google-signin-support"
 
 android {
-    compileSdkVersion 26
+    namespace "com.google.nativelib.googlesignin"
+    compileSdk 35
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 26
+        minSdk 23
+        targetSdk 35
         versionName project.version
         archivesBaseName = project.ext.baseName
+        consumerProguardFiles 'consumer-rules.pro'
         externalNativeBuild {
             cmake {
+                arguments "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=0x4000 -Wl,-z,common-page-size=0x1000"
                 cppFlags "-std=c++11", "-Wall"
             }
         }
         ndk {
-            abiFilters 'x86', 'armeabi-v7a', 'arm64-v8a'
+            abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }
     }
-    lintOptions {
-        abortOnError (project.hasProperty("lintAbortOnError") &&
-                      (project.lintAbortOnError == "" ||
-                       project.lintAbortOnError.toBoolean()))
+    ndkVersion "29.0.14206865"
+    lint {
+        abortOnError = (project.hasProperty("lintAbortOnError") &&
+                        (project.lintAbortOnError == "" ||
+                         project.lintAbortOnError.toBoolean()))
     }
     buildTypes {
         release {
@@ -73,44 +77,58 @@ android {
 // This is done in 2 parts, first declare the .srcaar as an
 // artifact, the second is a task to rename the aar -> srcaar.
 
-artifacts {
-    archives file("build/${baseName}-${version}.srcaar")
-}
+tasks.register("renameLibrary") {
+  dependsOn "assembleRelease"
+  def releaseAar = layout.buildDirectory.file("outputs/aar/${baseName}-release.aar")
+  def srcaar = layout.buildDirectory.file("${baseName}-${version}.srcaar")
+  inputs.file(releaseAar)
+  outputs.file(srcaar)
 
-task renameLibrary() {
-  doFirst {
+  doLast {
     copy {
-      from "${buildDir}/outputs/aar/${baseName}-release.aar"
-     into "${buildDir}"
+      from releaseAar
+      into layout.buildDirectory
       rename {
         String fn ->
           return fn.replace("release.aar", "${version}.srcaar")
       }
     }
   }
-
-  doLast {
-    configurations.archives.with   {
-         artifacts.remove artifacts.find { it.extension == "aar"}
-      }
-  }
 }
 
-uploadArchives {
-  dependsOn renameLibrary
-  repositories {
-    mavenDeployer {
-      repository(url: uri(project.ext.uploadDir))
-
-      // Remove the dependencies from the pom file to simplify the
-      // the resolution process.
-      pom.whenConfigured {
-        p -> p.dependencies = []
+publishing {
+  publications {
+    srcaar(MavenPublication) {
+      groupId = project.group
+      artifactId = project.ext.baseName
+      version = project.version
+      artifact(file("build/${baseName}-${version}.srcaar")) {
+        extension "srcaar"
+        builtBy tasks.named("renameLibrary")
       }
+
+      pom.withXml {
+        def dependenciesNode = asNode().get("dependencies")
+        dependenciesNode*.replaceNode {}
+      }
+    }
+  }
+  repositories {
+    maven {
+      name = "UnityLocal"
+      url = uri(project.ext.uploadDir)
     }
   }
 }
 
+tasks.register("uploadArchives") {
+  dependsOn tasks.named("publishSrcaarPublicationToUnityLocalRepository")
+}
+
 dependencies {
-        api "com.google.android.gms:play-services-auth:16.0.0"
+    api "com.google.android.gms:play-services-auth:21.6.0"
+    api "androidx.credentials:credentials:1.6.0"
+    api "androidx.credentials:credentials-play-services-auth:1.6.0"
+    api "com.google.android.libraries.identity.googleid:googleid:1.2.0"
+    implementation "androidx.annotation:annotation:1.9.1"
 }

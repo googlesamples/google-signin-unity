@@ -16,7 +16,6 @@
 package com.google.googlesignin;
 
 import android.util.Log;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -69,7 +68,7 @@ public class TokenPendingResult extends PendingResult<TokenResult> {
   @Override
   public void cancel() {
     setResult(null, CommonStatusCodes.CANCELED);
-    latch.countDown();
+    setStatus(CommonStatusCodes.CANCELED);
   }
 
   @Override
@@ -115,10 +114,10 @@ public class TokenPendingResult extends PendingResult<TokenResult> {
    * Set the result. If any of the values are null, and a previous non-null value was set, the
    * non-null value is retained.
    *
-   * @param account - the signin account, if any.
+   * @param account - the signin account data, if any.
    * @param resultCode - the result code.
    */
-  public synchronized void setResult(GoogleSignInAccount account, int resultCode) {
+  public synchronized void setResult(GoogleSignInUserData account, int resultCode) {
     result = new TokenResult(account, resultCode);
     result.setHandle(requestHandle);
   }

@@ -14,7 +14,28 @@
  * limitations under the License.
  */
 #import <GoogleSignIn/GIDSignIn.h>
-@interface GoogleSignInHandler
-    : NSObject <GIDSignInDelegate, GIDSignInUIDelegate>
+#import <GoogleSignIn/GIDConfiguration.h>
+#import <GoogleSignIn/GIDGoogleUser.h>
+#import <GoogleSignIn/GIDSignInResult.h>
+
+@interface GoogleSignInHandler : NSObject
+{
+    @public
+    GIDConfiguration* signInConfiguration;
+
+    @public
+    NSString* loginHint;
+    
+    @public
+    NSMutableArray* additionalScopes;
+}
+
+@property(class, nonatomic, readonly) GoogleSignInHandler *sharedInstance;
+
+- (void)completeSignInWithResult:(GIDSignInResult *)signInResult error:(NSError *)error;
+
+- (void)completeSignInWithUser:(GIDGoogleUser *)user error:(NSError *)error;
+
+- (void)completeDisconnectWithError:(NSError *)error;
 
 @end

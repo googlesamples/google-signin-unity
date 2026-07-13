@@ -17,7 +17,6 @@ package com.google.googlesignin;
 
 import android.app.Activity;
 import android.util.Log;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.CommonStatusCodes;
 
 /**
@@ -142,7 +141,7 @@ public class GoogleSignInHelper {
    *
    * @param handle Identifies the request.
    * @param result Authentication result.
-   * @param acct The account that is signed in, if successful.
+   * @param acct The account data that is signed in, if successful.
    */
-  public static native void nativeOnResult(long handle, int result, GoogleSignInAccount acct);
+  public static native void nativeOnResult(long handle, int result, GoogleSignInUserData acct);
 }

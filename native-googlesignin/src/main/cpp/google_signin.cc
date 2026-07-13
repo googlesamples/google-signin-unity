@@ -76,13 +76,13 @@ public static void nativeSignOut()
 
 /*
 public static void nativeOnResult(long requestHandle, int result,
-                                  GoogleSignInAccount acct),
+                                  GoogleSignInUserData acct),
  */
 #define NATIVEONRESULT_METHOD_NAME "nativeOnResult"
 #define NATIVEONRESULT_METHOD_SIG                                \
   "(J"                                                           \
   "I"                                                            \
-  "Lcom/google/android/gms/auth/api/signin/GoogleSignInAccount;" \
+  "Lcom/google/googlesignin/GoogleSignInUserData;"               \
   ")V"
 
 namespace googlesignin {
@@ -330,9 +330,10 @@ void GoogleSignIn::GoogleSignInImpl::SignOut() {
   JNIEnv *env = GetJniEnv();
 
   __android_log_print(ANDROID_LOG_INFO, TAG,
-                      "helper: %x method: %x activity: %x",
-                      (uintptr_t)helper_clazz_, (uintptr_t)signin_method_,
-                      (uintptr_t)activity_);
+                      "helper: %p method: %p activity: %p",
+                      reinterpret_cast<void *>(helper_clazz_),
+                      reinterpret_cast<void *>(signin_method_),
+                      reinterpret_cast<void *>(activity_));
 
   env->CallStaticVoidMethod(helper_clazz_, signout_method_, activity_);
 }

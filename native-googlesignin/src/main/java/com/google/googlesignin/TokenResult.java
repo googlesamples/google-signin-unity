@@ -15,7 +15,6 @@
  */
 package com.google.googlesignin;
 
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.Result;
 import com.google.android.gms.common.api.Status;
@@ -24,7 +23,7 @@ import java.util.Locale;
 /** Class for returning the tokens to a native caller. */
 public class TokenResult implements Result {
   private Status status;
-  private GoogleSignInAccount account;
+  private GoogleSignInUserData account;
   private long handle;
 
   TokenResult() {
@@ -32,7 +31,7 @@ public class TokenResult implements Result {
     account = null;
   }
 
-  TokenResult(GoogleSignInAccount account, int resultCode) {
+  TokenResult(GoogleSignInUserData account, int resultCode) {
     status = new Status(resultCode);
     this.account = account;
   }
@@ -48,7 +47,7 @@ public class TokenResult implements Result {
     return status;
   }
 
-  public GoogleSignInAccount getAccount() {
+  public GoogleSignInUserData getAccount() {
     return account;
   }
 

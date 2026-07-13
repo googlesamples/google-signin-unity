@@ -21,7 +21,7 @@
 #include "jni_init.h"                 // NOLINT
 
 #define GOOGLESIGNINACCOUNT_NAME \
-  "com/google/android/gms/auth/api/signin/GoogleSignInAccount"
+  "com/google/googlesignin/GoogleSignInUserData"
 
 // String getDisplayName()
 #define GETDISPLAYNAME_METHOD_NAME "getDisplayName"
